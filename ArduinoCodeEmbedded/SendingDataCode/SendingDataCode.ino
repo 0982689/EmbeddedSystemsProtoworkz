@@ -61,12 +61,11 @@ void connect_MQTT(){
 
 void setup()
 {
-  connect_MQTT();
   Wire.begin(D1, D2);
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
   Serial.begin(115200); //Fast serial as possible
-  
+  connect_MQTT();
   while (!Serial); //Wait for user to open terminal
   //Serial.println("MLX90640 IR Array Example");
 
@@ -111,18 +110,20 @@ void loop()
     MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
   }
   long stopTime = millis();
-  char stringSender[];
-  for (int x = 0; x < 768; x++){
-    stringSender[x] = char(mlx90640To[x]);
-  }
-  if (client.publish(temperature_topic, String(stringSender).c_str())) {
-    Serial.println("Temperature sent!");
-  }
-  else {
-    Serial.println("Temperature failed to send. Reconnecting to MQTT Broker and trying again");
-    client.connect(clientID, mqtt_username, mqtt_password);
-    delay(10); // This delay ensures that client.publish doesn't clash with the client.connect call
-    client.publish(temperature_topic, String(stringSender).c_str());
+  for (int x = 1; x <= 1; x++){
+    String langeString = "";
+    for (int y = 0; y < 768 * x; y++){
+      langeString += String(mlx90640To[y]) + ",";
+    }
+    if (client.publish(temperature_topic, String(langeString).c_str())) {
+      Serial.println("Temperature sent!");
+    }
+    else {
+      Serial.println("Temperature failed to send. Reconnecting to MQTT Broker and trying again");
+      client.connect(clientID, mqtt_username, mqtt_password);
+      delay(10); // This delay ensures that client.publish doesn't clash with the client.connect call
+      client.publish(temperature_topic, String(langeString).c_str());
+    }
   }
   delay(10000);       // print new values every 1 Minute
 }
