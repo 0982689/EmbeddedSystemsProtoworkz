@@ -58,10 +58,13 @@ def main():
     pixel_array = pixel_array.astype(np.uint8)
     im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
     
+    # Show datastream as heatmap real time
     cv.namedWindow('HeatMap', cv.WINDOW_NORMAL)
     cv.resizeWindow('HeatMap', 1280, 960)
     cv.imshow('HeatMap', im_color)
     cv.waitKey(0)
+    if cv.waitKey(0) & 0xFF == ord('q'):
+        cv.destroyAllWindows()
     
     cv.imwrite('./heatMaps/' + 'HeatMap_' + str(num) + '.png', im_color)
     print('Image: ' + './heatMaps/' + 'HeatMap_' + str(num) + '.png ' + 'saved')
