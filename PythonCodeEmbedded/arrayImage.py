@@ -4,6 +4,24 @@
 import numpy as np
 import os
 import cv2 as cv
+import paho.mqtt.client as mqtt
+
+MQTT_ADDRESS = '77.161.23.64'
+MQTT_USER = 'proto'
+MQTT_PASSWORD = 'workz'
+MQTT_TOPIC = 'temperature'
+
+
+def on_connect(client, userdata, flags, rc):
+#  The callback for when the client receives a CONNACK response from the s>
+    print('Connected with result code ' + str(rc))
+    client.subscribe(MQTT_TOPIC)
+
+
+def on_message(client, userdata, msg):
+#  The callback for when a PUBLISH message is received from the server."""
+    print(msg.topic + ' ' + str(msg.payload))
+    return msg.payload
 
 if not (os.path.exists('../heatMaps')):
     os.makedirs('../heatMaps')
@@ -11,6 +29,15 @@ if not (os.path.exists('../heatMaps')):
 
 # define the main function
 def main():
+    
+    mqtt_client = mqtt.Client()
+    mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
+
+    mqtt_client.connect(MQTT_ADDRESS, 1883)
+
+    
     num = len(os.listdir('../heatMaps'))
     list_pix = [24.44, 25.94, 25.39, 25.30, 25.59, 26.05, 27.23, 28.59, 28.34, 26.92, 25.10, 24.76, 25.00, 25.21, 23.94,
                 23.98, 23.41, 23.43, 23.64,
@@ -99,12 +126,14 @@ def main():
     cv.resizeWindow('HeatMap', 1280, 960)
     cv.imshow('HeatMap', im_color)
     cv.waitKey(0)
+    
     if cv.waitKey(0) & 0xFF == ord('q'):
         cv.destroyAllWindows()
 
     cv.imwrite('../heatMaps/' + 'HeatMap_' + str(num) + '.png', im_color)
     print('Image: ' + '../heatMaps/' + 'HeatMap_' + str(num) + '.png ' + 'saved')
 
+    mqtt_client.loop_forever()
 
 if __name__ == "__main__":
     main()
