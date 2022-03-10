@@ -7,6 +7,9 @@ import cv2 as cv
 
 num = len(os.listdir('./heatMaps'))
 
+if not (os.path.exists('./heatMaps')):
+    os.makedirs('./heatMaps')
+    
 # define a main function
 def main():
     listPix = [24.44,25.94,25.39,25.30,25.59,26.05,27.23,28.59,28.34,26.92,25.10,24.76,25.00,25.21,23.94,23.98,23.41,23.43,23.64,
