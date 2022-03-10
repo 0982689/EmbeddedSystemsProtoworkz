@@ -9,7 +9,7 @@ if not (os.path.exists('../heatMaps')):
     os.makedirs('../heatMaps')
 
 
-# define a main function
+# define the main function
 def main():
     num = len(os.listdir('../heatMaps'))
     list_pix = [24.44, 25.94, 25.39, 25.30, 25.59, 26.05, 27.23, 28.59, 28.34, 26.92, 25.10, 24.76, 25.00, 25.21, 23.94,
