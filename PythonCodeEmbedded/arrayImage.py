@@ -102,8 +102,8 @@ def main():
     if cv.waitKey(0) & 0xFF == ord('q'):
         cv.destroyAllWindows()
 
-    cv.imwrite('./heatMaps/' + 'HeatMap_' + str(num) + '.png', im_color)
-    print('Image: ' + './heatMaps/' + 'HeatMap_' + str(num) + '.png ' + 'saved')
+    cv.imwrite('../heatMaps/' + 'HeatMap_' + str(num) + '.png', im_color)
+    print('Image: ' + '../heatMaps/' + 'HeatMap_' + str(num) + '.png ' + 'saved')
 
 
 if __name__ == "__main__":
