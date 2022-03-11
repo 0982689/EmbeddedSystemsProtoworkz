@@ -8,8 +8,10 @@
 #include "ESP8266WiFi.h"  // Enables the ESP8266 to connect to the local network (via WiFi)
 
 // WiFi
-const char* ssid = "Tesla IoT";                 // Your personal network SSID
-const char* wifi_password = "fsL6HgjN"; // Your personal network password
+//const char* ssid = "Tesla IoT";                 // Your personal network SSID
+//const char* wifi_password = "fsL6HgjN"; // Your personal network password
+const char* ssid = "kruishuis";
+const char* wifi_password = "8ucHeBRu";
 
 // MQTT
 const char* mqtt_server = "77.161.23.64";  // IP of the MQTT broker
@@ -125,7 +127,7 @@ void loop()
       client.publish(temperature_topic, String(langeString).c_str());
     }
   }
-  delay(10000);       // print new values every 1 Minute
+  delay(10);       // print new values every 1 Minute
 }
 
 //Returns true if the MLX90640 is detected on the I2C bus
