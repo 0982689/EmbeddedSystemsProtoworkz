@@ -14,9 +14,13 @@ MQTT_PASSWORD = 'workz'
 MQTT_TOPIC = 'temperature'
 
 
-def takePicture():
+def takePicture(im_color, pixel_array_reshape):
+    if not (os.path.exists('../heatMaps')):
+        os.makedirs('../heatMaps')
     num = len(os.listdir('../heatMaps'))
     cv.imwrite('../heatMaps/' + 'HeatMap_' + str(num) + '.png', im_color)
+    f = open('../heatMaps/' + 'HeatMap_' + str(num) + '.txt', "w")
+    f.write(str(pixel_array_reshape))
     print('Image: ' + '../heatMaps/' + 'HeatMap_' + str(num) + '.png ' + 'saved')
 
 
@@ -40,10 +44,12 @@ def on_message(client, userdata, msg):
     msg.payload.pop()
     msg.payload = list(map(normalize, msg.payload))
 
-    pixel_array = np.reshape(msg.payload, (24, 32))
-    print(msg.payload)
-    pixel_array = pixel_array.astype(np.uint8)
+    pixel_array_reshape = np.reshape(msg.payload, (24, 32))
+    pixel_array = pixel_array_reshape.astype(np.uint8)
     im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
+
+    if cv.waitKey(33) == ord('k'):
+        takePicture(im_color, pixel_array_reshape)
 
     cv.namedWindow('HeatMap', cv.WINDOW_NORMAL)
     cv.resizeWindow('HeatMap', 1280, 960)
@@ -51,19 +57,12 @@ def on_message(client, userdata, msg):
 
     cv.waitKey(1)
 
-    if cv.waitKey(33) == ord('k'):
-        takePicture()
-
     if cv.waitKey(33) == ord('q'):
         cv.destroyAllWindows()
         exit()
     t1 = time.time()
 
     print('Proces time: ' + str(t1-t0))
-
-
-if not (os.path.exists('../heatMaps')):
-    os.makedirs('../heatMaps')
 
 
 # define the main function
