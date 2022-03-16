@@ -18,10 +18,11 @@ def takePicture(im_color, pixel_array_reshape):
     if not (os.path.exists('../heatMaps')):
         os.makedirs('../heatMaps')
     num = len(os.listdir('../heatMaps'))
-    cv.imwrite('../heatMaps/' + 'HeatMap_' + str(num) + '.png', im_color)
-    f = open('../heatMaps/' + 'HeatMap_' + str(num) + '.txt', "w")
+    cv.imwrite('../heatMaps/' + 'HeatMap_' + str(num/2) + '.png', im_color)
+    f = open('../heatMaps/' + 'HeatMap_' + str(num/2) + '.txt', "w")
     f.write(str(pixel_array_reshape))
-    print('Image: ' + '../heatMaps/' + 'HeatMap_' + str(num) + '.png ' + 'saved')
+    print('Image: ' + '../heatMaps/' + 'HeatMap_' +
+          str(num/2) + '.png ' + 'saved')
 
 
 def on_connect(client, userdata, flags, rc):
