@@ -8,7 +8,7 @@ class hsvThreshHolding:
         self.hMin = 0
         self.sMin = 0
         self.vMin = 0
-        self.hMax = 30
+        self.hMax = 110
         self.sMax = 255
         self.vMax = 255
         self.i = 0
@@ -19,8 +19,8 @@ class hsvThreshHolding:
         image = cv.imread(image)
 
         output = image
-        lower = np.array([0, 0, 0])
-        upper = np.array([30, 255, 255])
+        lower = np.array([self.hMin, self.sMin, self.vMin])
+        upper = np.array([self.hMax, self.sMax, self.vMax])
 
         # Create HSV Image and threshold into a range
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
