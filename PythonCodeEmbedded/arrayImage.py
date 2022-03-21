@@ -13,6 +13,8 @@ MQTT_USER = 'proto'
 MQTT_PASSWORD = 'workz'
 MQTT_TOPIC = 'temperature'
 
+tot = []
+
 
 def takePicture(im_color, pixel_array_reshape):
     if not (os.path.exists('../heatMaps')):
@@ -39,34 +41,45 @@ def on_message(client, userdata, msg):
     t0 = time.time()
 #  The callback for when a PUBLISH message is received from the server."""
 
-    # message = on_message()
     msg.payload = msg.payload.decode("utf-8")
     msg.payload = msg.payload.split(",")
     msg.payload.pop()
     msg.payload = list(map(normalize, msg.payload))
+    print(msg.payload)
+    # tot.extend(msg.payload)
+    tot.append(msg.payload)
+    if len(tot) == 2:
+        pixel_array_reshape = np.reshape(tot[0], (24, 32))
+        pixel_array = pixel_array_reshape.astype(np.uint8)
+        im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
 
-    pixel_array_reshape = np.reshape(msg.payload, (24, 32))
-    pixel_array = pixel_array_reshape.astype(np.uint8)
-    im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
+        pixel_array_reshape1 = np.reshape(tot[1], (24, 32))
+        pixel_array1 = pixel_array_reshape1.astype(np.uint8)
+        im_color1 = cv.applyColorMap(pixel_array1, cv.COLORMAP_JET)
 
-    if cv.waitKey(33) == ord('k'):
-        takePicture(im_color, pixel_array_reshape)
+        numpy_horizontal = np.hstack((im_color, im_color1))
 
-    cv.namedWindow('HeatMap', cv.WINDOW_NORMAL)
-    cv.resizeWindow('HeatMap', 1280, 960)
-    cv.imshow('HeatMap', im_color)
+        cv.namedWindow('HeatMap', cv.WINDOW_NORMAL)
+        cv.resizeWindow('HeatMap', 1280, 480)
+        cv.imshow('HeatMap', numpy_horizontal)
 
-    cv.waitKey(1)
+        cv.waitKey(1)
 
-    if cv.waitKey(33) == ord('q'):
-        cv.destroyAllWindows()
-        exit()
-    t1 = time.time()
+        tot.clear()
 
-    print('Proces time: ' + str(t1-t0))
+        if cv.waitKey(33) == ord('k'):
+            takePicture(im_color, pixel_array_reshape)
 
+        if cv.waitKey(33) == ord('q'):
+            cv.destroyAllWindows()
+            exit()
+        t1 = time.time()
+
+        print('Proces time: ' + str(t1-t0))
 
 # define the main function
+
+
 def main():
 
     mqtt_client = mqtt.Client()

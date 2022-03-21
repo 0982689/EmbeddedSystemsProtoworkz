@@ -61,22 +61,80 @@ void connect_MQTT(){
   }
 }
 
+//Returns true if the MLX90640 is detected on the I2C bus
+boolean isConnected()
+{
+  Wire.beginTransmission((uint8_t)MLX90640_address);
+  if (Wire.endTransmission() != 0)
+    return (false); //Sensor did not ACK
+  return (true);
+}
+void camera()
+{
+  long startTime = millis();
+  for (byte x = 0 ; x < 2 ; x++)
+  {
+    uint16_t mlx90640Frame[834];
+    int status = MLX90640_GetFrameData(MLX90640_address, mlx90640Frame);
+  
+    float vdd = MLX90640_GetVdd(mlx90640Frame, &mlx90640);
+    float Ta = MLX90640_GetTa(mlx90640Frame, &mlx90640);
+  
+    float tr = Ta - TA_SHIFT; //Reflected temperature based on the sensor ambient temperature
+    float emissivity = 0.95;
+  
+    MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
+  }
+  long stopTime = millis();
+  for (int x = 1; x <= 1; x++){
+    String langeString = "";
+    for (int y = 0; y < 768 * x; y++){
+      langeString += String(mlx90640To[y]) + ",";
+    }
+    if (client.publish(temperature_topic, String(langeString).c_str())) {
+//      Serial.println(langeString);
+      Serial.println("Temperature sent!");
+    }
+    else {
+      Serial.println("Temperature failed to send. Reconnecting to MQTT Broker and trying again");
+      client.connect(clientID, mqtt_username, mqtt_password);
+      delay(10); // This delay ensures that client.publish doesn't clash with the client.connect call
+      client.publish(temperature_topic, String(langeString).c_str());
+    }
+  }
+  delay(10);       // print new values every 1 Minute
+}
+
+
+void TCA9548A(uint8_t bus)
+{
+ Wire.beginTransmission(0x70);
+ Wire.write(1 << bus);
+ Wire.endTransmission();
+}
+
 void setup()
 {
   Wire.begin(D1, D2);
+
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
   Serial.begin(115200); //Fast serial as possible
   connect_MQTT();
   while (!Serial); //Wait for user to open terminal
   //Serial.println("MLX90640 IR Array Example");
-
+  TCA9548A(6);
   if (isConnected() == false)
   {
     Serial.println("MLX90640 not detected at default I2C address. Please check wiring. Freezing.");
     while (1);
   }
-
+  TCA9548A(7);
+    if (isConnected() == false)
+  {
+    Serial.println("MLX90640 not detected at default I2C address. Please check wiring. Freezing.");
+    while (1);
+  }
   //Get device parameters - We only have to do this once
   int status;
   uint16_t eeMLX90640[832];
@@ -97,44 +155,10 @@ void setup()
 
 void loop()
 {
-  long startTime = millis();
-  for (byte x = 0 ; x < 2 ; x++)
-  {
-    uint16_t mlx90640Frame[834];
-    int status = MLX90640_GetFrameData(MLX90640_address, mlx90640Frame);
-
-    float vdd = MLX90640_GetVdd(mlx90640Frame, &mlx90640);
-    float Ta = MLX90640_GetTa(mlx90640Frame, &mlx90640);
-
-    float tr = Ta - TA_SHIFT; //Reflected temperature based on the sensor ambient temperature
-    float emissivity = 0.95;
-
-    MLX90640_CalculateTo(mlx90640Frame, &mlx90640, emissivity, tr, mlx90640To);
-  }
-  long stopTime = millis();
-  for (int x = 1; x <= 1; x++){
-    String langeString = "";
-    for (int y = 0; y < 768 * x; y++){
-      langeString += String(mlx90640To[y]) + ",";
-    }
-    if (client.publish(temperature_topic, String(langeString).c_str())) {
-      Serial.println("Temperature sent!");
-    }
-    else {
-      Serial.println("Temperature failed to send. Reconnecting to MQTT Broker and trying again");
-      client.connect(clientID, mqtt_username, mqtt_password);
-      delay(10); // This delay ensures that client.publish doesn't clash with the client.connect call
-      client.publish(temperature_topic, String(langeString).c_str());
-    }
-  }
-  delay(10);       // print new values every 1 Minute
-}
-
-//Returns true if the MLX90640 is detected on the I2C bus
-boolean isConnected()
-{
-  Wire.beginTransmission((uint8_t)MLX90640_address);
-  if (Wire.endTransmission() != 0)
-    return (false); //Sensor did not ACK
-  return (true);
+  TCA9548A(7);
+  camera();
+  delay(1000);
+  TCA9548A(6);
+  camera();
+  delay(1000);
 }
