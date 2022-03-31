@@ -1,24 +1,17 @@
 import os
 import time
 # Import classes
-import hsvThreshhold as hsv
-import contourfilter as ctr
+import PeopleDetection as PD
 
-hsv = hsv.hsvThreshHolding()
-ctr = ctr.contourFilter()
-
+PD = PD.PeopleDetection()
 # Path to directories
-hsvdir = './Images/'
-ctrdir = './ThresholdedImages/'
+Images = './Images/'
 
 # Make time stamp
 t0 = time.time()
 
-for filename in sorted(os.listdir(hsvdir)):
-    hsv.hsvThresh(hsvdir + filename)
-
-for filename in sorted(os.listdir(ctrdir)):
-    ctr.thresh_callback(filename)
+for filename in sorted(os.listdir(Images)):
+    PD.hsvThresh(Images + filename)
 
 total = time.time() - t0
 
