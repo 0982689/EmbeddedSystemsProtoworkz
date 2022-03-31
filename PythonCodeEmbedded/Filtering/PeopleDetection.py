@@ -1,9 +1,11 @@
 import cv2 as cv
 import numpy as np
+import os
 import random as rng
 from matplotlib import pyplot as plt
-
 rng.seed(12345)
+from PIL import Image
+
 
 
 class PeopleDetection:
@@ -22,6 +24,10 @@ class PeopleDetection:
         self.lengthThresh = 4
         self.areaThresh = 10
         self.kernel = 2
+        template_folder = './Templates/'
+        self.templates = []
+        for filename in sorted(os.listdir(template_folder)):
+            self.templates.append(cv.imread(template_folder + filename))
 
     def hsvThresh(self, image):
         imagename = image
@@ -116,11 +122,7 @@ class PeopleDetection:
             cv.drawContours(People_mask, contours, i, color, 1)
             cv.fillPoly(People_mask, pts=contours, color=(255, 255, 255))
         # Cropping image to get rid of previously added black borders
-        # TODO
-        # LET OP DAT DIT UITNEINDELIJK NOG WORD AANGEPAST!!!!!!!!!
-        # output = output[10:550, 10:970]
-        # output = cv.resize(output, (544, 416), interpolation=cv.INTER_AREA)
-
+        
         img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
 
@@ -128,26 +130,47 @@ class PeopleDetection:
         # mask = cv.dilate(mask, kernel, iterations=1)
 
         output = cv.bitwise_and(output,output,mask = mask)
-        cv.imwrite('./People_images/' + str(self.x) +
-                   '_hsvimg.png', output)
-        self.x = self.x + 1
 
-        #print("image: " +str(self.x))
-        #self.people_recognision(image)       
+        # TODO
+        # LET OP DAT DIT UITNEINDELIJK NOG WORD AANGEPAST!!!!!!!!!
+
+        output = output[10:34, 10:42]
+        # print(str(output.shape[1]) + '_' + str(output.shape[0]))
+        # output = cv.resize(output, (544, 416), interpolation=cv.INTER_AREA)
+        #self.people_recognision(image)    
+        self.templateMatching(output)
+        #self.make_templates(output)   
 
     def people_recognision(self,image):
         output = image
-        
         print("image: " + str(self.x))
 
-    def templateMatching(self):
+    def make_templates(self,image):
+        image = Image.fromarray(image)
+        image = image.convert("RGBA")
+        datas = image.getdata()
+        newData = []
+        for item in datas:
+            if item[0] == 0 and item[1] == 0 and item[2] == 0:
+                newData.append((255, 255, 255, 0))
+            else:
+                newData.append(item)
+        image.putdata(newData)
+        image.save('./Templates/' + str(self.x) + '_template.png ', "PNG")
+        self.x = self.x + 1
+        print("image: " +str(self.x))
+
+    def templateMatching(self,image):
         img_rgb = cv.imread('./input2.jpg')
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
         template = cv.imread('./template1.png', 0)
         w, h = template.shape[::-1]
         res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-        threshold = 1
+        threshold = 0.8
         loc = np.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             cv.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
-        cv.imwrite('res.png', img_rgb)
+        for x in range(24):
+            for y in range(32):
+                if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
+                    cv.imwrite('res.png', img_rgb)
