@@ -16,12 +16,6 @@ for filename in sorted(os.listdir(Images)):
     PD.hsvThresh(Images + filename)
     i += 1
 
-# # Make time stamp
-t0 = time.time()
-
-for filename in sorted(os.listdir(Images)):
-    PD.hsvThresh(Images + filename)
-
 total = time.time() - t0
 
 print("succesfully segmented images")
