@@ -39,12 +39,6 @@ class PeopleDetection:
                 if output[i,j,0] > 0 or output[i,j,1] > 0 or output[i,j,2] > 0:
                     output[i,j] = [255,255,255]
                     
-        # Add black border (needed for accurate contour detection)
-        color = [0, 0, 0]
-        top, bottom, left, right = [10]*4
-        img_with_border = cv.copyMakeBorder(
-            output, top, bottom, left, right, cv.BORDER_CONSTANT, value=color)
-
         self.bitwiseOperation(output)
 
 
@@ -55,13 +49,18 @@ class PeopleDetection:
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
         output = cv.bitwise_and(img1,img1,mask = mask_inv)      
-        
         self.thresh_callback(output)
 
 
     def thresh_callback(self,image):
-        output = image
-        src = image
+         
+        # Add black border (needed for accurate contour detection)
+        color = [0, 0, 0]
+        top, bottom, left, right = [10]*4
+        img_with_border = cv.copyMakeBorder(
+            image, top, bottom, left, right, cv.BORDER_CONSTANT, value=color)
+        output = img_with_border
+        src = img_with_border
         # Convert image to gray and blur it
         self.src_gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
         self.src_gray = cv.blur(self.src_gray, (3, 3))
@@ -89,6 +88,7 @@ class PeopleDetection:
                 contoursfixed.append(contours[i])
         # Get the moments
         BiggestContour = []
+        
         BiggestContour.append(contoursfixed[areas.index(max(areas))])
 
         # print(BiggestContour)
@@ -121,11 +121,19 @@ class PeopleDetection:
         img2gray = cv.cvtColor(People_mask,cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
 
+        # kernel = np.ones((4,4), np.uint8)
+        # mask = cv.dilate(mask, kernel, iterations=1)
+
         output = cv.bitwise_and(output,output,mask = mask)
         cv.imwrite('./People_images/' + str(self.x) +
                    '_hsvimg.png', output)
         self.x = self.x + 1
-        print("image: " +str(self.x))       
+        #print("image: " +str(self.x))
+        #self.people_recognision(image)       
 
+    def people_recognision(self,image):
+        output = image
+
+       
 
 

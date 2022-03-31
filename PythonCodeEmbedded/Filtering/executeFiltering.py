@@ -9,9 +9,11 @@ Images = './Images/'
 
 # Make time stamp
 t0 = time.time()
-
+i = 0
 for filename in sorted(os.listdir(Images)):
+    print(filename + str(i))
     PD.hsvThresh(Images + filename)
+    i += 1
 
 total = time.time() - t0
 
