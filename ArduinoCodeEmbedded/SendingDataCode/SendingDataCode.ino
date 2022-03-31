@@ -157,8 +157,8 @@ void loop()
 {
   TCA9548A(7);
   camera();
-  delay(1000);
+  delay(10);
   TCA9548A(6);
   camera();
-  delay(1000);
+  delay(10);
 }
