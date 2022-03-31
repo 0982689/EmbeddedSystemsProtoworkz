@@ -26,6 +26,11 @@ class hsvThreshHolding:
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, lower, upper)
         output = cv.bitwise_and(image, image, mask=mask)
+    
+        for i in range(len(output)):
+            for j in range(len(output[i])):
+                if output[i,j,0] > 0 or output[i,j,1] > 0 or output[i,j,2] > 0:
+                    output[i,j] = [255,255,255]   
 
         # Add black border (needed for accurate contour detection)
         color = [0, 0, 0]
