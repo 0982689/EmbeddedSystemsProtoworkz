@@ -8,10 +8,10 @@
 #include "ESP8266WiFi.h"  // Enables the ESP8266 to connect to the local network (via WiFi)
 
 // WiFi
-//const char* ssid = "Tesla IoT";                 // Your personal network SSID
-//const char* wifi_password = "fsL6HgjN"; // Your personal network password
-const char* ssid = "kruishuis";
-const char* wifi_password = "8ucHeBRu";
+const char* ssid = "Tesla IoT";                 // Your personal network SSID
+const char* wifi_password = "fsL6HgjN"; // Your personal network password
+//const char* ssid = "kruishuis";
+//const char* wifi_password = "8ucHeBRu";
 
 // MQTT
 const char* mqtt_server = "77.161.23.64";  // IP of the MQTT broker
@@ -157,8 +157,8 @@ void loop()
 {
   TCA9548A(7);
   camera();
-  delay(1000);
+  delay(10);
   TCA9548A(6);
   camera();
-  delay(1000);
+  delay(10);
 }

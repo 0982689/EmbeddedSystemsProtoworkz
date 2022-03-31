@@ -1,8 +1,11 @@
 import cv2 as cv
-import numpy as np 
+import numpy as np
 import random as rng
+from matplotlib import pyplot as plt
 
 rng.seed(12345)
+
+
 class PeopleDetection:
     def __init__(self):
         # Set threshold values
@@ -33,7 +36,7 @@ class PeopleDetection:
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, lower, upper)
         output = cv.bitwise_and(image, image, mask=mask)
-        
+
         for i in range(len(output)):
             for j in range(len(output[i])):
                 if output[i,j,0] > 0 or output[i,j,1] > 0 or output[i,j,2] > 0:
@@ -41,16 +44,16 @@ class PeopleDetection:
                     
         self.bitwiseOperation(output)
 
-
-    def bitwiseOperation(self,output):
+    def bitwiseOperation(self, output):
         img1 = output
         img2 = cv.imread('./Heated_objects.png')
-        img2gray = cv.cvtColor(img2,cv.COLOR_BGR2GRAY)
+        img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
         output = cv.bitwise_and(img1,img1,mask = mask_inv)      
         self.thresh_callback(output)
 
+        self.thresh_callback(output)
 
     def thresh_callback(self,image):
          
@@ -92,7 +95,7 @@ class PeopleDetection:
         BiggestContour.append(contoursfixed[areas.index(max(areas))])
 
         # print(BiggestContour)
-        contours = BiggestContour 
+        contours = BiggestContour
         #contours = contoursfixed
         mu = [None]*len(contours)
         for i in range(len(contours)):
@@ -109,16 +112,16 @@ class PeopleDetection:
             (canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
 
         for i in range(len(contours)):
-            color = (255,255,255)
+            color = (255, 255, 255)
             cv.drawContours(People_mask, contours, i, color, 1)
-            cv.fillPoly(People_mask,pts=contours,color=(255,255,255))
+            cv.fillPoly(People_mask, pts=contours, color=(255, 255, 255))
         # Cropping image to get rid of previously added black borders
         # TODO
         # LET OP DAT DIT UITNEINDELIJK NOG WORD AANGEPAST!!!!!!!!!
         # output = output[10:550, 10:970]
         # output = cv.resize(output, (544, 416), interpolation=cv.INTER_AREA)
 
-        img2gray = cv.cvtColor(People_mask,cv.COLOR_BGR2GRAY)
+        img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
 
         # kernel = np.ones((4,4), np.uint8)
