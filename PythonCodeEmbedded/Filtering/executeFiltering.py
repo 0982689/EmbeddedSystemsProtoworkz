@@ -5,15 +5,16 @@ import PeopleDetection as PD
 
 PD = PD.PeopleDetection()
 # Path to directories
-Images = './Images/'
+# # Images = './Images/'
 
-# Make time stamp
-t0 = time.time()
+# # # Make time stamp
+# # t0 = time.time()
 
-for filename in sorted(os.listdir(Images)):
-    PD.hsvThresh(Images + filename)
+# # for filename in sorted(os.listdir(Images)):
+# #     PD.hsvThresh(Images + filename)
 
-total = time.time() - t0
+# # total = time.time() - t0
 
-print("succesfully segmented images")
-print("took: " + str(total))
+# # print("succesfully segmented images")
+# print("took: " + str(total))
+PD.templateMatching()
