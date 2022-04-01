@@ -1,11 +1,10 @@
+from PIL import Image
 import cv2 as cv
 import numpy as np
 import os
 import random as rng
 from matplotlib import pyplot as plt
 rng.seed(12345)
-from PIL import Image
-
 
 
 class PeopleDetection:
@@ -24,10 +23,11 @@ class PeopleDetection:
         self.lengthThresh = 4
         self.areaThresh = 10
         self.kernel = 2
-        template_folder = './Templates/'
+        template_folder = './Templates_test/'
         self.templates = []
         for filename in sorted(os.listdir(template_folder)):
             self.templates.append(cv.imread(template_folder + filename))
+        print("Init complete")
 
     def hsvThresh(self, image):
         imagename = image
@@ -45,9 +45,9 @@ class PeopleDetection:
 
         for i in range(len(output)):
             for j in range(len(output[i])):
-                if output[i,j,0] > 0 or output[i,j,1] > 0 or output[i,j,2] > 0:
-                    output[i,j] = [255,255,255]
-                    
+                if output[i, j, 0] > 0 or output[i, j, 1] > 0 or output[i, j, 2] > 0:
+                    output[i, j] = [255, 255, 255]
+
         self.bitwiseOperation(output)
 
     def bitwiseOperation(self, output):
@@ -56,13 +56,11 @@ class PeopleDetection:
         img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
-        output = cv.bitwise_and(img1,img1,mask = mask_inv)      
+        output = cv.bitwise_and(img1, img1, mask=mask_inv)
         self.thresh_callback(output)
 
-        self.thresh_callback(output)
+    def thresh_callback(self, image):
 
-    def thresh_callback(self,image):
-         
         # Add black border (needed for accurate contour detection)
         color = [0, 0, 0]
         top, bottom, left, right = [10]*4
@@ -97,12 +95,12 @@ class PeopleDetection:
                 contoursfixed.append(contours[i])
         # Get the moments
         BiggestContour = []
-        
+
         BiggestContour.append(contoursfixed[areas.index(max(areas))])
 
         # print(BiggestContour)
         contours = BiggestContour
-        #contours = contoursfixed
+        # contours = contoursfixed
         mu = [None]*len(contours)
         for i in range(len(contours)):
             mu[i] = cv.moments(contours[i])
@@ -122,14 +120,14 @@ class PeopleDetection:
             cv.drawContours(People_mask, contours, i, color, 1)
             cv.fillPoly(People_mask, pts=contours, color=(255, 255, 255))
         # Cropping image to get rid of previously added black borders
-        
+
         img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
 
         # kernel = np.ones((4,4), np.uint8)
         # mask = cv.dilate(mask, kernel, iterations=1)
 
-        output = cv.bitwise_and(output,output,mask = mask)
+        output = cv.bitwise_and(output, output, mask=mask)
 
         # TODO
         # LET OP DAT DIT UITNEINDELIJK NOG WORD AANGEPAST!!!!!!!!!
@@ -137,15 +135,16 @@ class PeopleDetection:
         output = output[10:34, 10:42]
         # print(str(output.shape[1]) + '_' + str(output.shape[0]))
         # output = cv.resize(output, (544, 416), interpolation=cv.INTER_AREA)
-        #self.people_recognision(image)    
+        # self.people_recognision(image)
+        print("Thresholding complete")
         self.templateMatching(output)
-        #self.make_templates(output)   
+        # self.make_templates(output)
 
-    def people_recognision(self,image):
+    def people_recognision(self, image):
         output = image
-        print("image: " + str(self.x))
+        # print("image: " + str(self.x))
 
-    def make_templates(self,image):
+    def make_templates(self, image):
         image = Image.fromarray(image)
         image = image.convert("RGBA")
         datas = image.getdata()
@@ -158,19 +157,44 @@ class PeopleDetection:
         image.putdata(newData)
         image.save('./Templates/' + str(self.x) + '_template.png ', "PNG")
         self.x = self.x + 1
-        print("image: " +str(self.x))
+        # print("image: " + str(self.x))
 
-    def templateMatching(self,image):
+    def templateMatching(self, image):
         img_rgb = cv.imread('./input2.jpg')
+        # img_rgb = image
+        imgNumber = 0
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
-        template = cv.imread('./template1.png', 0)
-        w, h = template.shape[::-1]
-        res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-        threshold = 0.8
-        loc = np.where(res >= threshold)
-        for pt in zip(*loc[::-1]):
-            cv.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
-        for x in range(24):
-            for y in range(32):
-                if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                    cv.imwrite('res.png', img_rgb)
+        for template in self.templates:
+            template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
+            w, h = template.shape[::-1]
+            res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
+            threshold = 1
+            loc = np.where(res >= threshold)
+            for pt in zip(*loc[::-1]):
+                cv.rectangle(
+                    img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
+            for x in range(24):
+                for y in range(32):
+                    if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
+
+                        cv.imwrite('./People_images/' +
+                                   str(imgNumber) + '.png', img_rgb)
+                        imgNumber = imgNumber + 1
+                        print("Image saved: " + str(imgNumber))
+                        break
+                else:  # only execute when it's no break in the inner loop
+                    continue
+                break
+
+            # template = cv.imread('./template1.png', 0)
+            # w, h = template.shape[::-1]
+            # res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
+            # threshold = 0.8
+            # loc = np.where(res >= threshold)
+            # for pt in zip(*loc[::-1]):
+            #     cv.rectangle(
+            #         img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
+            # for x in range(24):
+            #     for y in range(32):
+            #         if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
+            #             cv.imwrite('res.png', img_rgb)
