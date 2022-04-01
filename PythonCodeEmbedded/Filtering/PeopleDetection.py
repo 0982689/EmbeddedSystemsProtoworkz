@@ -23,7 +23,7 @@ class PeopleDetection:
         self.lengthThresh = 4
         self.areaThresh = 10
         self.kernel = 2
-        template_folder = './Templates_test/'
+        template_folder = './Templates/'
         self.templates = []
         for filename in sorted(os.listdir(template_folder)):
             self.templates.append(cv.imread(template_folder + filename))
@@ -168,11 +168,11 @@ class PeopleDetection:
             template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
             w, h = template.shape[::-1]
             res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-            threshold = 1
+            threshold = 0.8
             loc = np.where(res >= threshold)
             for pt in zip(*loc[::-1]):
                 cv.rectangle(
-                    img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
+                    img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), thickness=1)
             for x in range(24):
                 for y in range(32):
                     if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
@@ -185,16 +185,3 @@ class PeopleDetection:
                 else:  # only execute when it's no break in the inner loop
                     continue
                 break
-
-            # template = cv.imread('./template1.png', 0)
-            # w, h = template.shape[::-1]
-            # res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-            # threshold = 0.8
-            # loc = np.where(res >= threshold)
-            # for pt in zip(*loc[::-1]):
-            #     cv.rectangle(
-            #         img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
-            # for x in range(24):
-            #     for y in range(32):
-            #         if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-            #             cv.imwrite('res.png', img_rgb)
