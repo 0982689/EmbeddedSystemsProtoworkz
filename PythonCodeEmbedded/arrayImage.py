@@ -8,28 +8,28 @@ import paho.mqtt.client as mqtt
 
 import time
 
-MQTT_ADDRESS = '77.161.23.64'
-MQTT_USER = 'proto'
-MQTT_PASSWORD = 'workz'
-MQTT_TOPIC = 'temperature'
+MQTT_ADDRESS = "77.161.23.64"
+MQTT_USER = "proto"
+MQTT_PASSWORD = "workz"
+MQTT_TOPIC = "temperature"
 
 tot = []
 
 
 def takePicture(im_color, pixel_array_reshape):
-    if not (os.path.exists('../heatMaps')):
-        os.makedirs('../heatMaps')
-    num = len(os.listdir('../heatMaps'))
-    cv.imwrite('../heatMaps/' + 'HeatMap_' + str(num/2) + '.png', im_color)
-    f = open('../heatMaps/' + 'HeatMap_' + str(num/2) + '.txt', "w")
+    if not (os.path.exists("../heatMaps")):
+        os.makedirs("../heatMaps")
+    num = len(os.listdir("../heatMaps"))
+    cv.imwrite("../heatMaps/" + "HeatMap_" + str(num / 2) + ".png", im_color)
+    f = open("../heatMaps/" + "HeatMap_" + str(num / 2) + ".txt", "w")
     f.write(str(pixel_array_reshape))
-    print('Image: ' + '../heatMaps/' + 'HeatMap_' +
-          str(num/2) + '.png ' + 'saved')
+    print("Image: " + "../heatMaps/" + "HeatMap_" +
+          str(num / 2) + ".png " + "saved")
 
 
 def on_connect(client, userdata, flags, rc):
     #  The callback for when the client receives a CONNACK response from the s>
-    print('Connected with result code ' + str(rc))
+    print("Connected with result code " + str(rc))
     client.subscribe(MQTT_TOPIC)
 
 
@@ -39,7 +39,7 @@ def normalize(x):
 
 def on_message(client, userdata, msg):
     t0 = time.time()
-#  The callback for when a PUBLISH message is received from the server."""
+    #  The callback for when a PUBLISH message is received from the server."""
 
     msg.payload = msg.payload.decode("utf-8")
     msg.payload = msg.payload.split(",")
@@ -59,23 +59,24 @@ def on_message(client, userdata, msg):
 
         numpy_horizontal = np.hstack((im_color, im_color1))
 
-        cv.namedWindow('HeatMap', cv.WINDOW_NORMAL)
-        cv.resizeWindow('HeatMap', 1280, 480)
-        cv.imshow('HeatMap', numpy_horizontal)
+        cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
+        cv.resizeWindow("HeatMap", 1280, 480)
+        cv.imshow("HeatMap", numpy_horizontal)
 
         cv.waitKey(1)
 
         tot.clear()
 
-        if cv.waitKey(33) == ord('k'):
+        if cv.waitKey(33) == ord("k"):
             takePicture(im_color, pixel_array_reshape)
 
-        if cv.waitKey(33) == ord('q'):
+        if cv.waitKey(33) == ord("q"):
             cv.destroyAllWindows()
             exit()
         t1 = time.time()
 
-        print('Proces time: ' + str(t1-t0))
+        print("Proces time: " + str(t1 - t0))
+
 
 # define the main function
 
