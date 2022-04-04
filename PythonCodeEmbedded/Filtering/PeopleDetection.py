@@ -23,7 +23,8 @@ class PeopleDetection:
         self.lengthThresh = 4
         self.areaThresh = 10
         self.kernel = 2
-        template_folder = './Templates/'
+        self.imgNumber = -1
+        template_folder = './Templates_auto/'
         self.templates = []
         for filename in sorted(os.listdir(template_folder)):
             self.templates.append(cv.imread(template_folder + filename))
@@ -60,7 +61,6 @@ class PeopleDetection:
         self.thresh_callback(output)
 
     def thresh_callback(self, image):
-
         # Add black border (needed for accurate contour detection)
         color = [0, 0, 0]
         top, bottom, left, right = [10]*4
@@ -123,52 +123,41 @@ class PeopleDetection:
 
         img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
-
-        # kernel = np.ones((4,4), np.uint8)
-        # mask = cv.dilate(mask, kernel, iterations=1)
-
         output = cv.bitwise_and(output, output, mask=mask)
-
-        # TODO
-        # LET OP DAT DIT UITNEINDELIJK NOG WORD AANGEPAST!!!!!!!!!
-
         output = output[10:34, 10:42]
-        # print(str(output.shape[1]) + '_' + str(output.shape[0]))
-        # output = cv.resize(output, (544, 416), interpolation=cv.INTER_AREA)
-        # self.people_recognision(image)
-        print("Thresholding complete")
+        #print(type(output))
         self.templateMatching(output)
-        # self.make_templates(output)
+        #self.make_templates(output)
 
-    def people_recognision(self, image):
-        output = image
-        # print("image: " + str(self.x))
-
-    def make_templates(self, image):
-        image = Image.fromarray(image)
-        image = image.convert("RGBA")
-        datas = image.getdata()
-        newData = []
-        for item in datas:
-            if item[0] == 0 and item[1] == 0 and item[2] == 0:
-                newData.append((255, 255, 255, 0))
-            else:
-                newData.append(item)
-        image.putdata(newData)
-        image.save('./Templates/' + str(self.x) + '_template.png ', "PNG")
+    def make_templates(self,image):
+        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+        # threshold 
+        thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)[1]
+        hh, ww = thresh.shape
+        # make bottom 2 rows black where they are white the full width of the image
+        thresh[hh-3:hh, 0:ww] = 0
+        # get bounds of white pixels
+        white = np.where(thresh==255)
+        xmin, ymin, xmax, ymax = np.min(white[1]), np.min(white[0]), np.max(white[1]), np.max(white[0])
+        # crop the image at the bounds adding back the two blackened rows at the bottom
+        crop = image[ymin:ymax+1, xmin:xmax+1]
+        # save resulting masked image
+        cv.imwrite('./Templates_auto/' + str(self.x) + '_template.png ', crop)
         self.x = self.x + 1
-        # print("image: " + str(self.x))
 
     def templateMatching(self, image):
-        img_rgb = cv.imread('./input2.jpg')
-        # img_rgb = image
-        imgNumber = 0
+        #img_rgb = cv.imread('./images/HeatMap_0.png')
+        img_rgb = image
+        self.imgNumber = self.imgNumber + 1
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
-        for template in self.templates:
+        templateNumber = 0
+        for template in range(len(self.templates)):
+            templateNumber += 1
+            template = self.templates[template]
             template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
             w, h = template.shape[::-1]
             res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-            threshold = 0.8
+            threshold = 1
             loc = np.where(res >= threshold)
             for pt in zip(*loc[::-1]):
                 cv.rectangle(
@@ -176,12 +165,13 @@ class PeopleDetection:
             for x in range(24):
                 for y in range(32):
                     if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-
                         cv.imwrite('./People_images/' +
-                                   str(imgNumber) + '.png', img_rgb)
-                        imgNumber = imgNumber + 1
-                        print("Image saved: " + str(imgNumber))
+                                   str(self.imgNumber) + '_temp_' + str(templateNumber) + '.png', img_rgb)
+                        # print("Image saved: " + str(self.imgNumber) + ' ' + str(templateNumber))
                         break
                 else:  # only execute when it's no break in the inner loop
                     continue
                 break
+            else:
+                continue
+            break
