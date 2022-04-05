@@ -24,10 +24,24 @@ class PeopleDetection:
         self.areaThresh = 10
         self.kernel = 2
         self.imgNumber = -1
-        template_folder = './Templates_auto/'
-        self.templates = []
-        for filename in sorted(os.listdir(template_folder)):
-            self.templates.append(cv.imread(template_folder + filename))
+        template_folder_staan = './Templates/Templates_staan/'
+        template_folder_zitten = './Templates/Templates_zitten/'
+        template_folder_liggen = './Templates/Templates_liggen/'
+        self.templates_staan = []
+        for filename in sorted(os.listdir(template_folder_staan)):
+            self.templates_staan.append(
+                cv.imread(template_folder_staan + filename))
+        self.templates_zitten = []
+        for filename in sorted(os.listdir(template_folder_zitten)):
+            self.templates_zitten.append(
+                cv.imread(template_folder_zitten + filename))
+        self.templates_liggen = []
+        for filename in sorted(os.listdir(template_folder_liggen)):
+            self.templates_liggen.append(
+                cv.imread(template_folder_liggen + filename))
+        print(len(self.templates_staan))
+        print(len(self.templates_zitten))
+        print(len(self.templates_liggen))
         print("Init complete")
 
     def hsvThresh(self, image):
@@ -125,53 +139,63 @@ class PeopleDetection:
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         output = cv.bitwise_and(output, output, mask=mask)
         output = output[10:34, 10:42]
-        #print(type(output))
+        # print(type(output))
         self.templateMatching(output)
-        #self.make_templates(output)
+        # self.make_templates(output)
 
-    def make_templates(self,image):
+    def make_templates(self, image):
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-        # threshold 
+        # threshold
         thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)[1]
         hh, ww = thresh.shape
         # make bottom 2 rows black where they are white the full width of the image
         thresh[hh-3:hh, 0:ww] = 0
         # get bounds of white pixels
-        white = np.where(thresh==255)
-        xmin, ymin, xmax, ymax = np.min(white[1]), np.min(white[0]), np.max(white[1]), np.max(white[0])
+        white = np.where(thresh == 255)
+        xmin, ymin, xmax, ymax = np.min(white[1]), np.min(
+            white[0]), np.max(white[1]), np.max(white[0])
         # crop the image at the bounds adding back the two blackened rows at the bottom
         crop = image[ymin:ymax+1, xmin:xmax+1]
         # save resulting masked image
-        cv.imwrite('./Templates_auto/' + str(self.x) + '_template.png ', crop)
+        cv.imwrite('./Templates/Templates_zitten/' +
+                   str(self.x) + '_template.png ', crop)
+        print("template saved " + str(self.x))
         self.x = self.x + 1
 
-    def templateMatching(self, image):
-        #img_rgb = cv.imread('./images/HeatMap_0.png')
-        img_rgb = image
-        self.imgNumber = self.imgNumber + 1
+    def templateMatchingLogic(self, template, img_rgb, templateNumber, state):
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
+        template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
+        w, h = template.shape[::-1]
+        res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
+        threshold = 1
+        loc = np.where(res >= threshold)
+        for pt in zip(*loc[::-1]):
+            cv.rectangle(
+                img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), thickness=1)
+        for x in range(24):
+            for y in range(32):
+                if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
+                    cv.imwrite('./People_images/' + str(self.imgNumber) + '_temp_' +
+                               str(templateNumber) + '_' + state + '.png', img_rgb)
+                    print(pt)
+                    print(pt[0] + w, pt[1] + h)
+                    print("Image saved: " + str(self.imgNumber) +
+                          ' ' + str(templateNumber))
+                    return True
+
+    def templateMatching(self, image):
+        # img_rgb = cv.imread('./images/HeatMap_0.png')
+        self.imgNumber = self.imgNumber + 1
         templateNumber = 0
-        for template in range(len(self.templates)):
+        for template in self.templates_staan:
+            if(self.templateMatchingLogic(template, image, templateNumber, 'staan')):
+                return
             templateNumber += 1
-            template = self.templates[template]
-            template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
-            w, h = template.shape[::-1]
-            res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-            threshold = 1
-            loc = np.where(res >= threshold)
-            for pt in zip(*loc[::-1]):
-                cv.rectangle(
-                    img_rgb, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), thickness=1)
-            for x in range(24):
-                for y in range(32):
-                    if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                        cv.imwrite('./People_images/' +
-                                   str(self.imgNumber) + '_temp_' + str(templateNumber) + '.png', img_rgb)
-                        # print("Image saved: " + str(self.imgNumber) + ' ' + str(templateNumber))
-                        break
-                else:  # only execute when it's no break in the inner loop
-                    continue
-                break
-            else:
-                continue
-            break
+        for template in self.templates_zitten:
+            if(self.templateMatchingLogic(template, image, templateNumber, 'zitten')):
+                return
+            templateNumber += 1
+        for template in self.templates_liggen:
+            if(self.templateMatchingLogic(template, image, templateNumber, 'liggen')):
+                return
+            templateNumber += 1

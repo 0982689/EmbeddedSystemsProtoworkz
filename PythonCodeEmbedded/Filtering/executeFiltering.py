@@ -5,7 +5,8 @@ import PeopleDetection as PD
 
 PD = PD.PeopleDetection()
 # Path to directories
-Images = './Images/'
+Images = '../../heatMaps/zitten/'
+#Images = './Images/'
 
 # Make time stamp
 t0 = time.time()
