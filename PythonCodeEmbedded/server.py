@@ -1,13 +1,14 @@
-# Python program to convert list to image
-
 # import required libraries
 import numpy as np
 import os
 import cv2 as cv
 import paho.mqtt.client as mqtt
-
 import time
 
+# Import classes
+import people_detection as PD
+
+PD = PD.PeopleDetection()
 MQTT_ADDRESS = "77.161.23.64"
 MQTT_USER = "proto"
 MQTT_PASSWORD = "workz"
@@ -16,25 +17,14 @@ MQTT_TOPIC = "temperature"
 tot = []
 
 
-def takePicture(im_color, pixel_array_reshape):
-    if not (os.path.exists("../heatMaps")):
-        os.makedirs("../heatMaps")
-    num = len(os.listdir("../heatMaps"))
-    cv.imwrite("../heatMaps/" + "HeatMap_" + str(num / 2) + ".png", im_color)
-    f = open("../heatMaps/" + "HeatMap_" + str(num / 2) + ".txt", "w")
-    f.write(str(pixel_array_reshape))
-    print("Image: " + "../heatMaps/" + "HeatMap_" +
-          str(num / 2) + ".png " + "saved")
+def normalize(x):
+    return ((float(x) - 20) / (40 - 20)) * 255
 
 
 def on_connect(client, userdata, flags, rc):
     #  The callback for when the client receives a CONNACK response from the s>
     print("Connected with result code " + str(rc))
     client.subscribe(MQTT_TOPIC)
-
-
-def normalize(x):
-    return ((float(x) - 20) / (40 - 20)) * 255
 
 
 def on_message(client, userdata, msg):
@@ -45,7 +35,7 @@ def on_message(client, userdata, msg):
     msg.payload = msg.payload.split(",")
     msg.payload.pop()
     msg.payload = list(map(normalize, msg.payload))
-    print(msg.payload)
+    # print(msg.payload)
     # tot.extend(msg.payload)
     tot.append(msg.payload)
     if len(tot) == 2:
@@ -59,20 +49,19 @@ def on_message(client, userdata, msg):
 
         numpy_horizontal = np.hstack((im_color, im_color1))
 
-        cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
-        cv.resizeWindow("HeatMap", 1280, 480)
-        cv.imshow("HeatMap", numpy_horizontal)
+        PD.hsvThresh(numpy_horizontal)
 
-        cv.waitKey(1)
+        # # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
+        # # cv.resizeWindow("HeatMap", 1280, 480)
+        # # cv.imshow("HeatMap", numpy_horizontal)
+
+        # cv.waitKey(1)
 
         tot.clear()
 
-        if cv.waitKey(33) == ord("k"):
-            takePicture(im_color, pixel_array_reshape)
-
-        if cv.waitKey(33) == ord("q"):
-            cv.destroyAllWindows()
-            exit()
+        # if cv.waitKey(33) == ord("q"):
+        #     cv.destroyAllWindows()
+        #     exit()
         t1 = time.time()
 
         print("Proces time: " + str(t1 - t0))
