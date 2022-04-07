@@ -1,11 +1,10 @@
-from PIL import Image
 import cv2 as cv
 import numpy as np
 import os
 import random as rng
-from matplotlib import pyplot as plt
+import time
+from datetime import datetime
 rng.seed(12345)
-
 numOfCam = 2
 
 
@@ -24,8 +23,13 @@ class PeopleDetection:
         self.thresh = 0
         self.lengthThresh = 4
         self.areaThresh = 10
+        self.prev_count = 0
         self.kernel = 2
         self.imgNumber = -1
+        self.last_frame = None
+        self.start_time = 0
+        self.start_timers = False
+        self.heated_object_picture = cv.imread('./Heated_objects(1).png')
         template_folder_staan = './Filtering/Templates/Templates_staan/'
         template_folder_zitten = './Filtering/Templates/Templates_zitten/'
         template_folder_liggen = './Filtering/Templates/Templates_liggen/'
@@ -65,17 +69,15 @@ class PeopleDetection:
                 if output[i, j, 0] > 0 or output[i, j, 1] > 0 or output[i, j, 2] > 0:
                     output[i, j] = [255, 255, 255]
 
-        self.bitwiseOperation(output)
+        output = self.bitwiseOperation(output, self.heated_object_picture)
+        self.thresh_callback(output)
 
-    def bitwiseOperation(self, output):
-        img1 = output
-        img2 = cv.imread('./Heated_objects(1).png')
-        #img2 = output
-        img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
+    def bitwiseOperation(self, input, input2):
+        img2gray = cv.cvtColor(input2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
-        output = cv.bitwise_and(img1, img1, mask=mask_inv)
-        self.thresh_callback(output)
+        output = cv.bitwise_and(input, input, mask=mask_inv)
+        return output
 
     def thresh_callback(self, image):
         # Add black border (needed for accurate contour detection)
@@ -143,6 +145,26 @@ class PeopleDetection:
         output = output[10:(34*numOfCam), 10:(42*numOfCam)]
         # print(type(output))
         self.templateMatching(output)
+        if self.last_frame is not None:
+            frame = cv.cvtColor(self.bitwiseOperation(output, self.last_frame),  cv.COLOR_BGR2GRAY)
+            count = 0
+            current_time = time.time()
+            count_threshhold = 100
+            thresh_hold = 100
+            for x in range(frame.shape[0]):
+                for y in range(frame.shape[1]):
+                    if frame[x][y] > 0:
+                        count = count + 1
+            if count - self.prev_count > count_threshhold:
+                self.last_frame = output
+                return
+            if count > thresh_hold:
+                self.start_timers = True
+                self.start_time = time.time()
+            elif self.start_timers is True and count < thresh_hold and current_time - self.start_time > 60:
+                print(str(current_time - self.start_time))
+            self.prev_count = count
+        self.last_frame = output
         # self.make_templates(output)
 
     def make_templates(self, image):
