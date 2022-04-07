@@ -6,6 +6,7 @@ import random as rng
 from matplotlib import pyplot as plt
 rng.seed(12345)
 
+numOfCam = 2
 
 class PeopleDetection:
     def __init__(self):
@@ -24,9 +25,9 @@ class PeopleDetection:
         self.areaThresh = 10
         self.kernel = 2
         self.imgNumber = -1
-        template_folder_staan = './Templates/Templates_staan/'
-        template_folder_zitten = './Templates/Templates_zitten/'
-        template_folder_liggen = './Templates/Templates_liggen/'
+        template_folder_staan = './Filtering/Templates/Templates_staan/'
+        template_folder_zitten = './Filtering/Templates/Templates_zitten/'
+        template_folder_liggen = './Filtering/Templates/Templates_liggen/'
         self.templates_staan = []
         for filename in sorted(os.listdir(template_folder_staan)):
             self.templates_staan.append(
@@ -39,15 +40,15 @@ class PeopleDetection:
         for filename in sorted(os.listdir(template_folder_liggen)):
             self.templates_liggen.append(
                 cv.imread(template_folder_liggen + filename))
-        print(len(self.templates_staan))
-        print(len(self.templates_zitten))
-        print(len(self.templates_liggen))
+        # print(len(self.templates_staan))
+        # print(len(self.templates_zitten))
+        # print(len(self.templates_liggen))
         print("Init complete")
 
     def hsvThresh(self, image):
-        imagename = image
+        # imagename = image
         # Load in image
-        image = cv.imread(image)
+        # image = cv.imread(image)
 
         output = image
         lower = np.array([0, 0, 0])
@@ -67,7 +68,8 @@ class PeopleDetection:
 
     def bitwiseOperation(self, output):
         img1 = output
-        img2 = cv.imread('./Heated_objects.png')
+        # img2 = cv.imread('./Heated_objects.png')
+        img2 = output
         img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
@@ -138,7 +140,7 @@ class PeopleDetection:
         img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         output = cv.bitwise_and(output, output, mask=mask)
-        output = output[10:34, 10:42]
+        output = output[10:(34*numOfCam), 10:(42*numOfCam)]
         # print(type(output))
         self.templateMatching(output)
         # self.make_templates(output)
@@ -175,12 +177,14 @@ class PeopleDetection:
         for x in range(24):
             for y in range(32):
                 if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                    cv.imwrite('./People_images/' + str(self.imgNumber) + '_temp_' +
-                               str(templateNumber) + '_' + state + '.png', img_rgb)
-                    print(pt)
-                    print(pt[0] + w, pt[1] + h)
-                    print("Image saved: " + str(self.imgNumber) +
-                          ' ' + str(templateNumber))
+                    # cv.imwrite('./People_images/' + str(self.imgNumber) + '_temp_' +
+                    #            str(templateNumber) + '_' + state + '.png', img_rgb)
+                    cv.imshow("Image", img_rgb)
+                    cv.waitKey(1)
+                    # print(pt)
+                    # print(pt[0] + w, pt[1] + h)
+                    # print("Image saved: " + str(self.imgNumber) +
+                    #   ' ' + str(templateNumber))
                     return True
 
     def templateMatching(self, image):
