@@ -8,6 +8,7 @@ rng.seed(12345)
 
 numOfCam = 2
 
+
 class PeopleDetection:
     def __init__(self):
         # Set threshold values
@@ -68,8 +69,8 @@ class PeopleDetection:
 
     def bitwiseOperation(self, output):
         img1 = output
-        # img2 = cv.imread('./Heated_objects.png')
-        img2 = output
+        img2 = cv.imread('./Heated_objects(1).png')
+        #img2 = output
         img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
@@ -111,7 +112,6 @@ class PeopleDetection:
                 contoursfixed.append(contours[i])
         # Get the moments
         BiggestContour = []
-
         BiggestContour.append(contoursfixed[areas.index(max(areas))])
 
         # print(BiggestContour)
@@ -193,13 +193,16 @@ class PeopleDetection:
         templateNumber = 0
         for template in self.templates_staan:
             if(self.templateMatchingLogic(template, image, templateNumber, 'staan')):
+                print("Detected: staan")
                 return
             templateNumber += 1
         for template in self.templates_zitten:
             if(self.templateMatchingLogic(template, image, templateNumber, 'zitten')):
+                print("Detected: zitten")
                 return
             templateNumber += 1
         for template in self.templates_liggen:
             if(self.templateMatchingLogic(template, image, templateNumber, 'liggen')):
+                print("Detected: liggen")
                 return
             templateNumber += 1
