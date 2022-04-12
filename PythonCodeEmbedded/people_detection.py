@@ -1,10 +1,11 @@
-from PIL import Image
 import cv2 as cv
 import numpy as np
 import os
 import random as rng
-from matplotlib import pyplot as plt
+import time
+from datetime import datetime
 rng.seed(12345)
+numOfCam = 2
 
 
 class PeopleDetection:
@@ -22,11 +23,16 @@ class PeopleDetection:
         self.thresh = 0
         self.lengthThresh = 4
         self.areaThresh = 10
+        self.prev_count = 0
         self.kernel = 2
         self.imgNumber = -1
-        template_folder_staan = './Templates/Templates_staan/'
-        template_folder_zitten = './Templates/Templates_zitten/'
-        template_folder_liggen = './Templates/Templates_liggen/'
+        self.last_frame = None
+        self.start_time = 0
+        self.start_timers = False
+        self.heated_object_picture = cv.imread('./Heated_objects(1).png')
+        template_folder_staan = './Filtering/Templates/Templates_staan/'
+        template_folder_zitten = './Filtering/Templates/Templates_zitten/'
+        template_folder_liggen = './Filtering/Templates/Templates_liggen/'
         self.templates_staan = []
         for filename in sorted(os.listdir(template_folder_staan)):
             self.templates_staan.append(
@@ -39,15 +45,15 @@ class PeopleDetection:
         for filename in sorted(os.listdir(template_folder_liggen)):
             self.templates_liggen.append(
                 cv.imread(template_folder_liggen + filename))
-        print(len(self.templates_staan))
-        print(len(self.templates_zitten))
-        print(len(self.templates_liggen))
+        # print(len(self.templates_staan))
+        # print(len(self.templates_zitten))
+        # print(len(self.templates_liggen))
         print("Init complete")
 
     def hsvThresh(self, image):
-        imagename = image
+        # imagename = image
         # Load in image
-        image = cv.imread(image)
+        # image = cv.imread(image)
 
         output = image
         lower = np.array([0, 0, 0])
@@ -63,16 +69,15 @@ class PeopleDetection:
                 if output[i, j, 0] > 0 or output[i, j, 1] > 0 or output[i, j, 2] > 0:
                     output[i, j] = [255, 255, 255]
 
-        self.bitwiseOperation(output)
+        output = self.bitwiseOperation(output, self.heated_object_picture)
+        self.thresh_callback(output)
 
-    def bitwiseOperation(self, output):
-        img1 = output
-        img2 = cv.imread('./Heated_objects.png')
-        img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
+    def bitwiseOperation(self, input, input2):
+        img2gray = cv.cvtColor(input2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         mask_inv = cv.bitwise_not(mask)
-        output = cv.bitwise_and(img1, img1, mask=mask_inv)
-        self.thresh_callback(output)
+        output = cv.bitwise_and(input, input, mask=mask_inv)
+        return output
 
     def thresh_callback(self, image):
         # Add black border (needed for accurate contour detection)
@@ -109,7 +114,6 @@ class PeopleDetection:
                 contoursfixed.append(contours[i])
         # Get the moments
         BiggestContour = []
-
         BiggestContour.append(contoursfixed[areas.index(max(areas))])
 
         # print(BiggestContour)
@@ -138,9 +142,29 @@ class PeopleDetection:
         img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         output = cv.bitwise_and(output, output, mask=mask)
-        output = output[10:34, 10:42]
+        output = output[10:(34*numOfCam), 10:(42*numOfCam)]
         # print(type(output))
         self.templateMatching(output)
+        if self.last_frame is not None:
+            frame = cv.cvtColor(self.bitwiseOperation(output, self.last_frame),  cv.COLOR_BGR2GRAY)
+            count = 0
+            current_time = time.time()
+            count_threshhold = 100
+            thresh_hold = 100
+            for x in range(frame.shape[0]):
+                for y in range(frame.shape[1]):
+                    if frame[x][y] > 0:
+                        count = count + 1
+            if count - self.prev_count > count_threshhold:
+                self.last_frame = output
+                return
+            if count > thresh_hold:
+                self.start_timers = True
+                self.start_time = time.time()
+            elif self.start_timers is True and count < thresh_hold and current_time - self.start_time > 60:
+                print(str(current_time - self.start_time))
+            self.prev_count = count
+        self.last_frame = output
         # self.make_templates(output)
 
     def make_templates(self, image):
@@ -175,12 +199,14 @@ class PeopleDetection:
         for x in range(24):
             for y in range(32):
                 if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                    cv.imwrite('./People_images/' + str(self.imgNumber) + '_temp_' +
-                               str(templateNumber) + '_' + state + '.png', img_rgb)
-                    print(pt)
-                    print(pt[0] + w, pt[1] + h)
-                    print("Image saved: " + str(self.imgNumber) +
-                          ' ' + str(templateNumber))
+                    # cv.imwrite('./People_images/' + str(self.imgNumber) + '_temp_' +
+                    #            str(templateNumber) + '_' + state + '.png', img_rgb)
+                    cv.imshow("Image", img_rgb)
+                    cv.waitKey(1)
+                    # print(pt)
+                    # print(pt[0] + w, pt[1] + h)
+                    # print("Image saved: " + str(self.imgNumber) +
+                    #   ' ' + str(templateNumber))
                     return True
 
     def templateMatching(self, image):
@@ -189,13 +215,16 @@ class PeopleDetection:
         templateNumber = 0
         for template in self.templates_staan:
             if(self.templateMatchingLogic(template, image, templateNumber, 'staan')):
+                print("Detected: staan")
                 return
             templateNumber += 1
         for template in self.templates_zitten:
             if(self.templateMatchingLogic(template, image, templateNumber, 'zitten')):
+                print("Detected: zitten")
                 return
             templateNumber += 1
         for template in self.templates_liggen:
             if(self.templateMatchingLogic(template, image, templateNumber, 'liggen')):
+                print("Detected: liggen")
                 return
             templateNumber += 1

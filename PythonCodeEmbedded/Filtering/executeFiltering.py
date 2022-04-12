@@ -11,7 +11,7 @@ Images = '../../heatMaps/zitten/'
 # Make time stamp
 t0 = time.time()
 for filename in sorted(os.listdir(Images)):
-#filename = os.listdir(Images)[0]
+    #filename = os.listdir(Images)[0]
     PD.hsvThresh(Images + filename)
 
 total = time.time() - t0
