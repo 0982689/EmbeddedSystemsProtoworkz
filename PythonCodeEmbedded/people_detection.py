@@ -7,6 +7,7 @@ from datetime import datetime
 rng.seed(12345)
 numOfCam = 2
 
+
 class PeopleDetection:
     def __init__(self):
         # Set threshold values
@@ -144,7 +145,8 @@ class PeopleDetection:
         # print(type(output))
         self.templateMatching(output)
         if self.last_frame is not None:
-            frame = cv.cvtColor(self.bitwiseOperation(output, self.last_frame),  cv.COLOR_BGR2GRAY)
+            frame = cv.cvtColor(self.bitwiseOperation(
+                output, self.last_frame),  cv.COLOR_BGR2GRAY)
             count = 0
             current_time = time.time()
             count_threshhold = 100
@@ -203,8 +205,7 @@ class PeopleDetection:
                     cv.waitKey(1)
                     # print(pt)
                     # print(pt[0] + w, pt[1] + h)
-                    
-                    
+
                     # print("Image saved: " + str(self.imgNumber) +
                     #   ' ' + str(templateNumber))
                     return True

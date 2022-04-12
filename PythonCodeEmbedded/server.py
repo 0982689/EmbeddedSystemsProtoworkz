@@ -5,10 +5,10 @@ import cv2 as cv
 import paho.mqtt.client as mqtt
 import time
 import tkinter as tk
-import app as APP
+import App as APP
 import multiprocessing as mp
-
-lock = mp.Lock()
+from queue import Queue
+from threading import Thread
 # Import classes
 import people_detection as PD
 
@@ -19,6 +19,7 @@ MQTT_PASSWORD = "workz"
 MQTT_TOPIC = "temperature"
 
 tot = []
+q = Queue()
 
 
 def normalize(x):
@@ -54,7 +55,8 @@ def on_message(client, userdata, msg):
         numpy_horizontal = np.hstack((im_color, im_color1))
 
         PD.hsvThresh(numpy_horizontal)
-
+        data = ((1, 2), (3, 4))
+        q.put(data)
         # # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
         # # cv.resizeWindow("HeatMap", 1280, 480)
         # # cv.imshow("HeatMap", numpy_horizontal)
@@ -75,20 +77,14 @@ def on_message(client, userdata, msg):
 
 
 def main():
-    pool = mp.Pool()
-    mp.freeze_support()
-    lock.acquire()
-    pool.apply_async(loop_mqtt)
-    pool.apply_async(loop_main)
-    lock.release()
-    pool.close()
-    pool.join()
+    t1 = Thread(target=loop_mqtt, args=())
+    t2 = Thread(target=loop_main, args=())
+    t1.start()
+    t2.start()
 
 
 def loop_main():
-    root = tk.Tk()
-    APP.View(root)
-    root.mainloop()
+    APP.start(q)
 
 
 def loop_mqtt():
