@@ -47,7 +47,6 @@ class PeopleDetection:
         # print(len(self.templates_staan))
         # print(len(self.templates_zitten))
         # print(len(self.templates_liggen))
-        print("Init complete")
 
     def hsvThresh(self, image):
         # imagename = image

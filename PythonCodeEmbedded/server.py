@@ -6,7 +6,9 @@ import paho.mqtt.client as mqtt
 import time
 import tkinter as tk
 import app as APP
+import multiprocessing as mp
 
+lock = mp.Lock()
 # Import classes
 import people_detection as PD
 
@@ -73,23 +75,30 @@ def on_message(client, userdata, msg):
 
 
 def main():
-    print("test2")
+    pool = mp.Pool()
+    mp.freeze_support()
+    lock.acquire()
+    pool.apply_async(loop_mqtt)
+    pool.apply_async(loop_main)
+    lock.release()
+    pool.close()
+    pool.join()
+
+
+def loop_main():
     root = tk.Tk()
-    view = APP.View(root)
+    APP.View(root)
     root.mainloop()
-    print("test1")
+
+
+def loop_mqtt():
     mqtt_client = mqtt.Client()
     mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
     mqtt_client.connect(MQTT_ADDRESS, 1883)
     mqtt_client.loop_forever()
-   
-
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except exception as e:
-        print(e)
+    main()
