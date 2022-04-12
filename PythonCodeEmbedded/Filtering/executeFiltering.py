@@ -1,11 +1,15 @@
 import os
 import time
 # Import classes
-import PeopleDetection as PD
+import people_detection as PD
+import app as APP
+import tkinter as tk
+
+view = APP.View()
 
 PD = PD.PeopleDetection()
 # Path to directories
-Images = '../../heatMaps/zitten/'
+Images = '../heatMaps/zitten/'
 #Images = './Images/'
 
 # Make time stamp

@@ -4,6 +4,8 @@ import os
 import cv2 as cv
 import paho.mqtt.client as mqtt
 import time
+import tkinter as tk
+import app as APP
 
 # Import classes
 import people_detection as PD
@@ -71,14 +73,19 @@ def on_message(client, userdata, msg):
 
 
 def main():
-
+    print("test2")
+    root = tk.Tk()
+    view = APP.View(root)
+    root.mainloop()
+    print("test1")
     mqtt_client = mqtt.Client()
     mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
-
     mqtt_client.connect(MQTT_ADDRESS, 1883)
     mqtt_client.loop_forever()
+   
+
 
 
 if __name__ == "__main__":

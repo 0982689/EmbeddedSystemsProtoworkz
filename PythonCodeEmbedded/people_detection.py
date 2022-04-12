@@ -7,7 +7,6 @@ from datetime import datetime
 rng.seed(12345)
 numOfCam = 2
 
-
 class PeopleDetection:
     def __init__(self):
         # Set threshold values
@@ -205,6 +204,8 @@ class PeopleDetection:
                     cv.waitKey(1)
                     # print(pt)
                     # print(pt[0] + w, pt[1] + h)
+                    
+                    
                     # print("Image saved: " + str(self.imgNumber) +
                     #   ' ' + str(templateNumber))
                     return True
