@@ -70,8 +70,6 @@ class PeopleDetection:
                     output[i, j] = [255, 255, 255]
 
         output = self.bitwiseOperation(output, self.heated_object_picture)
-        cv.imwrite('./Filtering/Bitwise/' +
-                   str(self.imgNumber) + '_bitwise.png', output)
         self.thresh_callback(output)
 
     def bitwiseOperation(self, input, input2):
@@ -194,7 +192,7 @@ class PeopleDetection:
         template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
         w, h = template.shape[::-1]
         res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-        threshold = 0.8
+        threshold = 0.5
         loc = np.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             cv.rectangle(
@@ -202,7 +200,7 @@ class PeopleDetection:
         for x in range(24):
             for y in range(32):
                 if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                    self.coords = [pt[0] + w, pt[1] + h]
+                    self.coords = [(pt[0], pt[1]), (pt[0] + w, pt[1] + h)]
                     return True
 
     def templateMatching(self, image):

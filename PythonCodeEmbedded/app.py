@@ -185,7 +185,7 @@ class View:
             corner1 = coordinates[2]
             self.canvas.create_rectangle(
                 corner0[0], corner0[1], corner1[0], corner1[1], fill=tempColor)
-
+# IndexError: invalid index to scalar variable.
         self.update.after(100, self.process_data)
 
     def process_data(self):
@@ -199,6 +199,7 @@ class View:
         self.canvas.delete('line')
         self.canvas.delete('whiteBox')
         coordinateLeftTop = data[0]
+        print("left top: " + str(coordinateLeftTop))
         coordinateRightBottom = data[1]
         # center off mass
         centerX = (
