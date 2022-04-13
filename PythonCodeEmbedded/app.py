@@ -1,11 +1,18 @@
-from cgi import test
 import tkinter as tk
 from functools import partial
 import numpy as np
-import time
 
 global active
 active = None
+
+
+def create_canvas(screen, width, height):
+    return tk.Canvas(screen, width=width, height=height)
+
+
+def on_click(event):
+    list_of_globals = globals()
+    list_of_globals['active'] = event.widget.find_closest(event.x, event.y)
 
 
 class View:
@@ -13,13 +20,18 @@ class View:
         self.q = q
         self.root = root
         self.array = []
-        self.initialView()
+        self.initial_view()
+        self.update = None
+        self.sensor = None
+        self.entry1 = None
+        self.entry2 = None
+        self.second_screen = None
+        self.update_canvas = None
 
-    def initialView(self):
+    def initial_view(self):
         self.root.attributes("-fullscreen", True)
 
-        canvas = tk.Canvas(self.root, width=1920, height=1080)
-        canvas.pack()
+        canvas = tk.Canvas(self.root, width=1920, height=1080).pack()
 
         canvas.create_text(750, 50, fill="black", font="Courier 14",
                            text="Fill in the measurements of your room.")
@@ -35,71 +47,52 @@ class View:
         canvas.create_window(750, 125, window=self.entry2)
 
         btn = tk.Button(canvas, text='Click for next screen.',
-                        command=self.secondView)
-        btn.place(x=688, y=150)
-        canvas.pack()
+                        command=self.second_view)
+        btn.place(x=688, y=150).pack()
 
-    def secondView(self):
-        self.var1 = float(self.entry1.get())
-        self.var2 = float(self.entry2.get())
+    def second_view(self):
+        self.entry1 = float(self.entry1.get())
+        self.entry2 = float(self.entry2.get())
 
         self.root.destroy()
-        self.secondScreen = tk.Tk()
 
-        self.secondScreen.attributes("-fullscreen", True)
+        self.second_screen = tk.Tk()
 
-        canvas = tk.Canvas(self.secondScreen, width=1920, height=1080)
-        canvas.pack()
+        self.second_screen.attributes("-fullscreen", True)
 
-        self.secondScreen.bind("<Key>", partial(self.keypress, canvas))
+        canvas = create_canvas(
+            self.second_screen, width=1920, height=1080).pack()
+
+        self.second_screen.bind("<Key>", partial(self.keypress, canvas))
 
         canvas.create_rectangle(
-            400, 50, 400 + self.var1 * 180, 50 + self.var2 * 180, outline='blue')
+            400, 50, 400 + self.entry1 * 180, 50 + self.entry2 * 180, outline='blue')
         self.sensor = canvas.create_rectangle(
-            self.var1 * 180/2 + 395, self.var2 * 180/2 + 45, self.var1 * 180/2 + 405, self.var2 * 180/2 + 55, outline='red')
+            self.entry1 * 180 / 2 + 395, self.entry2 *
+            180 / 2 + 45, self.entry1 * 180 / 2 + 405,
+            self.entry2 * 180 / 2 + 55, outline='red')
         canvas.pack()
 
-        bedBtn = tk.Button(canvas, text='Bed',
-                           command=partial(self.bedFunction, canvas))
-        bedBtn.place(x=50, y=50)
+        tk.Button(canvas, text='Bed',
+                  command=partial(self.furniture_function, canvas, 'red', 'cyan', 400, 50, 580, 410)).place(x=50, y=50)
 
-        chairBtn = tk.Button(canvas, text='Chair',
-                             command=partial(self.chairFunction, canvas))
-        chairBtn.place(x=50, y=100)
+        tk.Button(canvas, text='Chair',
+                  command=partial(self.furniture_function, canvas, 'yellow', 'cyan', 400, 50, 490, 140)).place(x=50,
+                                                                                                               y=100)
 
-        sofaBtn = tk.Button(canvas, text='Sofa',
-                            command=partial(self.sofaFunction, canvas))
-        sofaBtn.place(x=50, y=150)
+        tk.Button(canvas, text='Sofa',
+                  command=partial(self.furniture_function, canvas, 'blue', 'cyan', 400, 50, 580, 320)).place(x=50,
+                                                                                                             y=150)
 
         canvas.pack()
 
-    def bedFunction(self, canvas):
-        bed = canvas.create_rectangle(
-            400, 50, 580, 410, fill='red', activefill='cyan')
-        listOfGlobals = globals()
-        listOfGlobals['active'] = bed
-        self.array.append(bed)
-        canvas.tag_bind(bed, '<Double-1>', partial(self.onClick, canvas))
-
-    def chairFunction(self, canvas):
-        chair = canvas.create_rectangle(
-            400, 50, 490, 140, fill='yellow', activefill='cyan')
-        listOfGlobals = globals()
-        listOfGlobals['active'] = chair
-        self.array.append(chair)
-        canvas.tag_bind(chair, '<Double-1>', partial(self.onClick, canvas))
-
-    def sofaFunction(self, canvas):
-        sofa = canvas.create_rectangle(
-            400, 50, 580, 320, fill='blue', activefill='cyan')
-        listOfGlobals = globals()
-        listOfGlobals['active'] = sofa
-        self.array.append(sofa)
-        canvas.tag_bind(sofa, '<Double-1>', partial(self.onClick, canvas))
-
-    def onClick(self, canvas, event):
-        listOfGlobals = globals()
-        listOfGlobals['active'] = event.widget.find_closest(event.x, event.y)
+    def furniture_function(self, canvas, fill, active_fill, top_left, top_right, bottom_left, bottom_right):
+        list_of_globals = globals()
+        list_of_globals['active'] = canvas.create_rectangle(top_left, top_right, bottom_left, bottom_right, fill=fill,
+                                                            activefill=active_fill)
+        self.array.append(list_of_globals['active'])
+        canvas.tag_bind(list_of_globals['active'],
+                        '<Double-1>', partial(on_click, canvas))
 
     def keypress(self, canvas, event):
         x, y = 0, 0
@@ -112,32 +105,32 @@ class View:
         elif event.char == "s":
             y = 5
         elif event.char == "c":
-            self.calculatingCoords(canvas)
+            self.calculating_coords(canvas)
         elif event.char == "f":
-            self.updateScreen(canvas)
-        #canvas.move(active, x, y)
+            self.update_screen(canvas)
+        canvas.move(active, x, y)
 
-    def calculatingCoords(self, canvas):
+    def calculating_coords(self, canvas):
         sensor = canvas.coords(self.sensor)
-        coordSensor = [
+        coord_sensor = [
             sensor[0] + (sensor[2] - sensor[0]), sensor[1] + (sensor[3] - sensor[1])]
-        sensorArray = []
+        sensor_array = []
         corners = []
 
         for item in self.array:
             coords = canvas.coords(item)
             corners.clear()
 
-            tmpVar = ""
+            tmp_str = ""
             x = coords[2] - coords[0]
             y = coords[3] - coords[1]
 
-            if(x == 180 and y == 360):
-                tmpVar = "Bed"
-            elif(x == 90 and y == 90):
-                tmpVar = "Chair"
-            elif(x == 180 and y == 270):
-                tmpVar = "Sofa"
+            if x == 180 and y == 360:
+                tmp_str = "Bed"
+            elif x == 90 and y == 90:
+                tmp_str = "Chair"
+            elif x == 180 and y == 270:
+                tmp_str = "Sofa"
 
             corners.append([coords[0], coords[1]])
             corners.append([coords[2], coords[1]])
@@ -148,122 +141,124 @@ class View:
             temp.clear()
             for corner in corners:
                 temp.append(np.degrees(
-                    np.arctan((coordSensor[1] - corner[1]) / (coordSensor[0] - corner[0]))))
+                    np.arctan((coord_sensor[1] - corner[1]) / (coord_sensor[0] - corner[0]))))
+            sensor_array.append((tmp_str, corners))
+        return sensor_array
 
-            thisTuple = (tmpVar, corners)
-            sensorArray.append(thisTuple)
-        return sensorArray
-
-    def updateScreen(self, originalCanvas):
-        objects = self.calculatingCoords(originalCanvas)
-        self.secondScreen.destroy()
+    def update_screen(self, original_canvas):
+        objects = self.calculating_coords(original_canvas)
+        self.second_screen.destroy()
 
         self.update = tk.Tk()
 
         self.update.attributes("-fullscreen", True)
 
-        self.canvas = tk.Canvas(self.update, width=1920, height=1080)
-        self.canvas.pack()
+        self.update_canvas = create_canvas(
+            self.update, width=1920, height=1080)
+        self.update_canvas.pack()
 
-        self.canvas.create_rectangle(
-            400, 50, 400 + self.var1 * 180, 50 + self.var2 * 180, outline='black')
-        sensor = self.canvas.create_rectangle(self.var1 * 180/2 + 395, self.var2 * 180 /
-                                              2 + 45, self.var1 * 180/2 + 405, self.var2 * 180/2 + 55, outline='red')
-        self.canvas.pack()
+        self.update_canvas.create_rectangle(
+            400, 50, 400 + self.entry1 * 180, 50 + self.entry2 * 180, outline='black')
+        self.update_canvas.create_rectangle(self.entry1 * 180 / 2 + 395, self.entry2 * 180 /
+                                            2 + 45, self.entry1 * 180 / 2 + 405, self.entry2 * 180 / 2 + 55,
+                                            outline='red')
+        self.update_canvas.pack()
 
         for object in objects:
-            tempColor = ''
+            temp_color = ''
             if object[0] == 'Bed':
-                tempColor = 'red'
+                temp_color = 'red'
             elif object[0] == 'Chair':
-                tempColor = 'yellow'
+                temp_color = 'yellow'
             elif object[0] == 'Sofa':
-                tempColor = 'blue'
+                temp_color = 'blue'
 
             coordinates = object[1]
             corner0 = coordinates[0]
             corner1 = coordinates[2]
-            self.canvas.create_rectangle(
-                corner0[0], corner0[1], corner1[0], corner1[1], fill=tempColor)
-# IndexError: invalid index to scalar variable.
+            self.update_canvas.create_rectangle(
+                corner0[0], corner0[1], corner1[0], corner1[1], fill=temp_color)
+        # IndexError: invalid index to scalar variable.
         self.update.after(100, self.process_data)
 
     def process_data(self):
         data = self.q.get()
-        self.personPlacing(data)
-        self.createWhiteBoxes()
+        self.person_placing(data)
+        self.create_white_boxes()
         self.update.after(100, self.process_data)
 
-    def personPlacing(self, data):
-        self.canvas.delete('line')
-        self.canvas.delete('whiteBox')
-        coordinateLeftTop = data[0]
-        coordinateRightBottom = data[1]
+    def person_placing(self, data):
+        print("Person Placing")
+        self.update_canvas.delete('line')
+        self.update_canvas.delete('whiteBox')
+        coordinate_left_top = data[0]
+        print("left top: " + str(coordinate_left_top))
+        coordinate_right_bottom = data[1]
         # center off mass
-        centerX = (
-            coordinateLeftTop[0] + ((coordinateRightBottom[0] - coordinateLeftTop[0]) / 2))
-        centerY = (
-            coordinateLeftTop[1] + ((coordinateRightBottom[1] - coordinateLeftTop[1]) / 2))
+        center_x = (
+            coordinate_left_top[0] + ((coordinate_right_bottom[0] - coordinate_left_top[0]) / 2))
+        center_y = (
+            coordinate_left_top[1] + ((coordinate_right_bottom[1] - coordinate_left_top[1]) / 2))
 
-        self.degrees(centerX)
-        self.degrees(coordinateLeftTop[0])
-        self.degrees(coordinateRightBottom[0])
+        self.degrees(center_x)
+        self.degrees(coordinate_left_top[0])
+        self.degrees(coordinate_right_bottom[0])
 
-    def degrees(self, centerX):
-        heightToMiddle = 50 + self.var2 * 180 / 2
-        point1 = [400 + self.var1 * 180/2, heightToMiddle]
+    def degrees(self, center_x):
+        height_to_middle = 50 + self.entry2 * 180 / 2
+        point1 = [400 + self.entry1 * 180 / 2, height_to_middle]
 
-        beta = np.radians(centerX * 3.4375)
+        beta = np.radians(center_x * 3.4375)
 
         tmp = 0
-        if(np.degrees(beta) == 90):
-            point2 = [400 + self.var1 * 180/2, 50 + self.var2 * 180]
-            self.canvas.create_line(
-                point1[0], point1[1], point2[0], point2[1],  tag='line')
-            return
-        elif(np.degrees(beta) == 270):
-            point2 = [400 + self.var1 * 180/2, 50]
-            self.canvas.create_line(
+        if np.degrees(beta) == 90:
+            point2 = [400 + self.entry1 * 180 / 2, 50 + self.entry2 * 180]
+            self.update_canvas.create_line(
                 point1[0], point1[1], point2[0], point2[1], tag='line')
             return
-        elif(np.degrees(beta) < 90):
+        elif np.degrees(beta) == 270:
+            point2 = [400 + self.entry1 * 180 / 2, 50]
+            self.update_canvas.create_line(
+                point1[0], point1[1], point2[0], point2[1], tag='line')
+            return
+        elif np.degrees(beta) < 90:
             tmp = 270
             left = False
-        elif(np.degrees(beta) < 180):
+        elif np.degrees(beta) < 180:
             left = True
             tmp = 90
-        elif(np.degrees(beta) < 270):
+        elif np.degrees(beta) < 270:
             tmp = 90
             left = True
-        elif(np.degrees(beta) < 360):
+        elif np.degrees(beta) < 360:
             tmp = 270
             left = False
+        else:
+            left = None
 
         alpha = np.radians(360 - tmp - np.degrees(beta))
 
-        width = self.var1 * 180
+        width = self.entry1 * 180
         a = width / 2
         b = (a * np.sin(beta)) / np.sin(alpha)
-
         # Drawing line c
-
-        if(left):
+        if left:
             point2 = [400, 540 / 2 + b + 50]
         else:
             point2 = [400 + width, 540 / 2 + b + 50]
 
-        self.canvas.create_line(point1[0], point1[1],
-                                point2[0], point2[1], tag='line')
+        self.update_canvas.create_line(point1[0], point1[1],
+                                       point2[0], point2[1], tag='line')
 
-    def createWhiteBoxes(self):
-        self.canvas.create_rectangle(
+    def create_white_boxes(self):
+        self.update_canvas.create_rectangle(
             0, 0, 400, 1080, fill='white', outline="", tags="whiteBox")
-        self.canvas.create_rectangle(
+        self.update_canvas.create_rectangle(
             0, 0, 1920, 50, fill='white', outline="", tags="whiteBox")
-        self.canvas.create_rectangle(401 + self.var1 * 180,
-                                     0, 1920, 1080, fill='white', outline="", tags="whiteBox")
-        self.canvas.create_rectangle(0, 51 + self.var2 * 180,
-                                     1920, 1080, fill='white', outline="", tags="whiteBox")
+        self.update_canvas.create_rectangle(401 + self.entry2 * 180,
+                                            0, 1920, 1080, fill='white', outline="", tags="whiteBox")
+        self.update_canvas.create_rectangle(0, 51 + self.entry2 * 180,
+                                            1920, 1080, fill='white', outline="", tags="whiteBox")
 
 
 def start(q):
