@@ -5,13 +5,13 @@ import cv2 as cv
 import paho.mqtt.client as mqtt
 import time
 import tkinter as tk
-import App as APP
 import multiprocessing as mp
 from queue import Queue
 from threading import Thread
 # Import classes
 import people_detection as PD
-
+import App as APP
+import random as rnd
 PD = PD.PeopleDetection()
 MQTT_ADDRESS = "77.161.23.64"
 MQTT_USER = "proto"
@@ -55,8 +55,12 @@ def on_message(client, userdata, msg):
         numpy_horizontal = np.hstack((im_color, im_color1))
 
         PD.hsvThresh(numpy_horizontal)
-        data = ((1, 2), (3, 4))
-        q.put(data)
+        data = ((rnd.randint(6, 9), 2), (18, 16))
+        #data = PD.get_coords()
+        if PD.get_coords() is not None:
+            q.put(PD.get_coords())
+        else:
+            print("none")
         # # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
         # # cv.resizeWindow("HeatMap", 1280, 480)
         # # cv.imshow("HeatMap", numpy_horizontal)

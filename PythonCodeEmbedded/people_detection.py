@@ -29,10 +29,11 @@ class PeopleDetection:
         self.last_frame = None
         self.start_time = 0
         self.start_timers = False
-        self.heated_object_picture = cv.imread('./Heated_objects(1).png')
+        self.heated_object_picture = cv.imread('./Heated_objects_test.png')
         template_folder_staan = './Filtering/Templates/Templates_staan/'
         template_folder_zitten = './Filtering/Templates/Templates_zitten/'
         template_folder_liggen = './Filtering/Templates/Templates_liggen/'
+        self.coords = None
         self.templates_staan = []
         for filename in sorted(os.listdir(template_folder_staan)):
             self.templates_staan.append(
@@ -69,6 +70,8 @@ class PeopleDetection:
                     output[i, j] = [255, 255, 255]
 
         output = self.bitwiseOperation(output, self.heated_object_picture)
+        cv.imwrite('./Filtering/Bitwise/' +
+                   str(self.imgNumber) + '_bitwise.png', output)
         self.thresh_callback(output)
 
     def bitwiseOperation(self, input, input2):
@@ -186,12 +189,12 @@ class PeopleDetection:
         print("template saved " + str(self.x))
         self.x = self.x + 1
 
-    def templateMatchingLogic(self, template, img_rgb, templateNumber, state):
+    def templateMatchingLogic(self, template, img_rgb):
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
         template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
         w, h = template.shape[::-1]
         res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-        threshold = 1
+        threshold = 0.8
         loc = np.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             cv.rectangle(
@@ -199,33 +202,30 @@ class PeopleDetection:
         for x in range(24):
             for y in range(32):
                 if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                    # cv.imwrite('./People_images/' + str(self.imgNumber) + '_temp_' +
-                    #            str(templateNumber) + '_' + state + '.png', img_rgb)
-                    cv.imshow("Image", img_rgb)
-                    cv.waitKey(1)
-                    # print(pt)
-                    # print(pt[0] + w, pt[1] + h)
-
-                    # print("Image saved: " + str(self.imgNumber) +
-                    #   ' ' + str(templateNumber))
+                    self.coords = [pt[0] + w, pt[1] + h]
                     return True
 
     def templateMatching(self, image):
         # img_rgb = cv.imread('./images/HeatMap_0.png')
+        print("template matching")
         self.imgNumber = self.imgNumber + 1
         templateNumber = 0
         for template in self.templates_staan:
-            if(self.templateMatchingLogic(template, image, templateNumber, 'staan')):
+            if(self.templateMatchingLogic(template, image)):
                 print("Detected: staan")
                 return
             templateNumber += 1
         for template in self.templates_zitten:
-            if(self.templateMatchingLogic(template, image, templateNumber, 'zitten')):
+            if(self.templateMatchingLogic(template, image)):
                 print("Detected: zitten")
                 return
             templateNumber += 1
         for template in self.templates_liggen:
-            if(self.templateMatchingLogic(template, image, templateNumber, 'liggen')):
+            if(self.templateMatchingLogic(template, image)):
                 print("Detected: liggen")
                 return
             templateNumber += 1
+
+    def get_coords(self):
+        print("get coords: " + str(self.coords))
+        return self.coords

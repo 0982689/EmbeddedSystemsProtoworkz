@@ -154,27 +154,22 @@ class View:
             sensorArray.append(thisTuple)
         return sensorArray
 
-    def get_data(self):
-        data = self.q.get()
-        print(data)
-        self.update.after(100, self.get_data)
-
     def updateScreen(self, originalCanvas):
         objects = self.calculatingCoords(originalCanvas)
         self.secondScreen.destroy()
 
         self.update = tk.Tk()
-        self.update.after(100, self.get_data)
+
         self.update.attributes("-fullscreen", True)
 
-        canvas = tk.Canvas(self.update, width=1920, height=1080)
-        canvas.pack()
+        self.canvas = tk.Canvas(self.update, width=1920, height=1080)
+        self.canvas.pack()
 
-        canvas.create_rectangle(
+        self.canvas.create_rectangle(
             400, 50, 400 + self.var1 * 180, 50 + self.var2 * 180, outline='black')
-        sensor = canvas.create_rectangle(self.var1 * 180/2 + 395, self.var2 * 180 /
-                                         2 + 45, self.var1 * 180/2 + 405, self.var2 * 180/2 + 55, outline='red')
-        canvas.pack()
+        sensor = self.canvas.create_rectangle(self.var1 * 180/2 + 395, self.var2 * 180 /
+                                              2 + 45, self.var1 * 180/2 + 405, self.var2 * 180/2 + 55, outline='red')
+        self.canvas.pack()
 
         for object in objects:
             tempColor = ''
@@ -188,27 +183,34 @@ class View:
             coordinates = object[1]
             corner0 = coordinates[0]
             corner1 = coordinates[2]
-            canvas.create_rectangle(
+            self.canvas.create_rectangle(
                 corner0[0], corner0[1], corner1[0], corner1[1], fill=tempColor)
 
-        self.personPlacing(canvas)
+        self.update.after(100, self.process_data)
 
-    def personPlacing(self, canvas):
-        coordinateLeftTop = (8, 2)
-        coordinateRightBottom = (18, 16)
+    def process_data(self):
+        data = self.q.get()
+        self.personPlacing(data)
+        self.createWhiteBoxes()
+        self.update.after(100, self.process_data)
 
+    def personPlacing(self, data):
+        print("Person Placing")
+        self.canvas.delete('line')
+        self.canvas.delete('whiteBox')
+        coordinateLeftTop = data[0]
+        coordinateRightBottom = data[1]
         # center off mass
         centerX = (
             coordinateLeftTop[0] + ((coordinateRightBottom[0] - coordinateLeftTop[0]) / 2))
         centerY = (
             coordinateLeftTop[1] + ((coordinateRightBottom[1] - coordinateLeftTop[1]) / 2))
 
-        self.degrees(centerX, canvas)
-        self.degrees(coordinateLeftTop[0], canvas)
-        self.degrees(coordinateRightBottom[0], canvas)
-        self.createWhiteBoxes(canvas)
+        self.degrees(centerX)
+        self.degrees(coordinateLeftTop[0])
+        self.degrees(coordinateRightBottom[0])
 
-    def degrees(self, centerX, canvas):
+    def degrees(self, centerX):
         heightToMiddle = 50 + self.var2 * 180 / 2
         point1 = [400 + self.var1 * 180/2, heightToMiddle]
 
@@ -217,11 +219,13 @@ class View:
         tmp = 0
         if(np.degrees(beta) == 90):
             point2 = [400 + self.var1 * 180/2, 50 + self.var2 * 180]
-            canvas.create_line(point1[0], point1[1], point2[0], point2[1])
+            self.canvas.create_line(
+                point1[0], point1[1], point2[0], point2[1],  tag='line')
             return
         elif(np.degrees(beta) == 270):
             point2 = [400 + self.var1 * 180/2, 50]
-            canvas.create_line(point1[0], point1[1], point2[0], point2[1])
+            self.canvas.create_line(
+                point1[0], point1[1], point2[0], point2[1], tag='line')
             return
         elif(np.degrees(beta) < 90):
             tmp = 270
@@ -249,15 +253,18 @@ class View:
         else:
             point2 = [400 + width, 540 / 2 + b + 50]
 
-        canvas.create_line(point1[0], point1[1], point2[0], point2[1])
+        self.canvas.create_line(point1[0], point1[1],
+                                point2[0], point2[1], tag='line')
 
-    def createWhiteBoxes(self, canvas):
-        canvas.create_rectangle(0, 0, 400, 1080, fill='white', outline="")
-        canvas.create_rectangle(0, 0, 1920, 50, fill='white', outline="")
-        canvas.create_rectangle(401 + self.var1 * 180,
-                                0, 1920, 1080, fill='white', outline="")
-        canvas.create_rectangle(0, 51 + self.var2 * 180,
-                                1920, 1080, fill='white', outline="")
+    def createWhiteBoxes(self):
+        self.canvas.create_rectangle(
+            0, 0, 400, 1080, fill='white', outline="", tags="whiteBox")
+        self.canvas.create_rectangle(
+            0, 0, 1920, 50, fill='white', outline="", tags="whiteBox")
+        self.canvas.create_rectangle(401 + self.var1 * 180,
+                                     0, 1920, 1080, fill='white', outline="", tags="whiteBox")
+        self.canvas.create_rectangle(0, 51 + self.var2 * 180,
+                                     1920, 1080, fill='white', outline="", tags="whiteBox")
 
 
 def start(q):
