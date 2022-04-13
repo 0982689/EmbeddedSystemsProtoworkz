@@ -3,7 +3,7 @@ import numpy as np
 import os
 import random as rng
 import time
-from datetime import datetime
+from threading import Thread
 rng.seed(12345)
 numOfCam = 2
 
@@ -34,21 +34,22 @@ class PeopleDetection:
         template_folder_zitten = './Filtering/Templates/Templates_zitten/'
         template_folder_liggen = './Filtering/Templates/Templates_liggen/'
         self.coords = None
-        self.templates_staan = []
+
+        templates_staan = []
         for filename in sorted(os.listdir(template_folder_staan)):
-            self.templates_staan.append(
+            templates_staan.append(
                 cv.imread(template_folder_staan + filename))
-        self.templates_zitten = []
+        templates_zitten = []
         for filename in sorted(os.listdir(template_folder_zitten)):
-            self.templates_zitten.append(
+            templates_zitten.append(
                 cv.imread(template_folder_zitten + filename))
-        self.templates_liggen = []
+        templates_liggen = []
         for filename in sorted(os.listdir(template_folder_liggen)):
-            self.templates_liggen.append(
+            templates_liggen.append(
                 cv.imread(template_folder_liggen + filename))
-        # print(len(self.templates_staan))
-        # print(len(self.templates_zitten))
-        # print(len(self.templates_liggen))
+
+        self.template_tuple = [templates_staan,
+                               templates_zitten, templates_liggen]
 
     def hsvThresh(self, image):
         # imagename = image
@@ -188,6 +189,7 @@ class PeopleDetection:
         self.x = self.x + 1
 
     def templateMatchingLogic(self, template, img_rgb):
+        pt = None
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
         template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
         w, h = template.shape[::-1]
@@ -200,30 +202,34 @@ class PeopleDetection:
         for x in range(24):
             for y in range(32):
                 if img_rgb[x][y][0] == 0 and img_rgb[x][y][1] == 0 and img_rgb[x][y][2] == 255:
-                    self.coords = [(pt[0], pt[1]), (pt[0] + w, pt[1] + h)]
+                    try:
+                        self.coords = [(pt[0], pt[1]), (pt[0] + w, pt[1] + h)]
+                    except:
+                        pass
                     return True
 
-    def templateMatching(self, image):
-        # img_rgb = cv.imread('./images/HeatMap_0.png')
-        print("template matching")
-        self.imgNumber = self.imgNumber + 1
+    def template_staan_thread(self, image, templateID):
         templateNumber = 0
-        for template in self.templates_staan:
+        for template in self.template_tuple[templateID]:
             if(self.templateMatchingLogic(template, image)):
-                print("Detected: staan")
-                return
-            templateNumber += 1
-        for template in self.templates_zitten:
-            if(self.templateMatchingLogic(template, image)):
-                print("Detected: zitten")
-                return
-            templateNumber += 1
-        for template in self.templates_liggen:
-            if(self.templateMatchingLogic(template, image)):
-                print("Detected: liggen")
+                print("Detected: " + str(templateNumber))
                 return
             templateNumber += 1
 
+    def templateMatching(self, image):
+        self.imgNumber = self.imgNumber + 1
+        t1 = Thread(target=self.template_staan_thread,
+                    args=(image, 0))  # staan
+        t2 = Thread(target=self.template_staan_thread,
+                    args=(image, 1))  # zitten
+        t3 = Thread(target=self.template_staan_thread,
+                    args=(image, 2))  # liggen
+        t1.start()
+        t2.start()
+        t3.start()
+        t1.join()
+        t2.join()
+        t3.join()
+
     def get_coords(self):
-        print("get coords: " + str(self.coords))
         return self.coords

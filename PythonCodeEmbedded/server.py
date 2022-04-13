@@ -60,7 +60,7 @@ def on_message(client, userdata, msg):
         if PD.get_coords() is not None:
             q.put(PD.get_coords())
         else:
-            print("none")
+            pass
         # # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
         # # cv.resizeWindow("HeatMap", 1280, 480)
         # # cv.imshow("HeatMap", numpy_horizontal)

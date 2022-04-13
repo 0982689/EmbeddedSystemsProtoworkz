@@ -195,11 +195,9 @@ class View:
         self.update.after(100, self.process_data)
 
     def personPlacing(self, data):
-        print("Person Placing")
         self.canvas.delete('line')
         self.canvas.delete('whiteBox')
         coordinateLeftTop = data[0]
-        print("left top: " + str(coordinateLeftTop))
         coordinateRightBottom = data[1]
         # center off mass
         centerX = (
