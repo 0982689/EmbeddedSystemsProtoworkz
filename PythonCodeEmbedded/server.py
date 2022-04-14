@@ -12,12 +12,11 @@ from threading import Thread
 import people_detection as PD
 import app as APP
 import random as rnd
-PD = PD.PeopleDetection()
+PD = PD.Image_editing()
 MQTT_ADDRESS = "77.161.23.64"
 MQTT_USER = "proto"
 MQTT_PASSWORD = "workz"
 MQTT_TOPIC = "temperature"
-
 tot = []
 q = Queue()
 
@@ -26,16 +25,13 @@ def normalize(x):
     return ((float(x) - 20) / (40 - 20)) * 255
 
 
-def on_connect(client, userdata, flags, rc):
-    #  The callback for when the client receives a CONNACK response from the s>
+def on_connect(client, userdata, flags, rc):        # The callback for when the client receives a CONNACK response from the s>erver."""
     print("Connected with result code " + str(rc))
     client.subscribe(MQTT_TOPIC)
 
 
-def on_message(client, userdata, msg):
+def on_message(client, userdata, msg):              # The callback for when a PUBLISH message is received from the server."""
     t0 = time.time()
-    #  The callback for when a PUBLISH message is received from the server."""
-
     msg.payload = msg.payload.decode("utf-8")
     msg.payload = msg.payload.split(",")
     msg.payload.pop()
@@ -47,40 +43,21 @@ def on_message(client, userdata, msg):
         pixel_array_reshape = np.reshape(tot[0], (24, 32))
         pixel_array = pixel_array_reshape.astype(np.uint8)
         im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
-
         pixel_array_reshape1 = np.reshape(tot[1], (24, 32))
         pixel_array1 = pixel_array_reshape1.astype(np.uint8)
         im_color1 = cv.applyColorMap(pixel_array1, cv.COLORMAP_JET)
-
         numpy_horizontal = np.hstack((im_color, im_color1))
-
-        PD.hsvThresh(numpy_horizontal)
-        data = ((rnd.randint(6, 9), 2), (18, 16))
-        #data = PD.get_coords()
+        PD.hsv_thresh(numpy_horizontal)
         if PD.get_coords() is not None:
             q.put(PD.get_coords())
         else:
             pass
-        # # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
-        # # cv.resizeWindow("HeatMap", 1280, 480)
-        # # cv.imshow("HeatMap", numpy_horizontal)
-
-        # cv.waitKey(1)
-
         tot.clear()
-
-        # if cv.waitKey(33) == ord("q"):
-        #     cv.destroyAllWindows()
-        #     exit()
         t1 = time.time()
-
         print("Proces time: " + str(t1 - t0))
 
 
-# define the main function
-
-
-def main():
+def main():                 # define the main function
     t1 = Thread(target=loop_mqtt, args=())
     t2 = Thread(target=loop_main, args=())
     t1.start()
