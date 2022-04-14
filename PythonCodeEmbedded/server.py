@@ -10,7 +10,7 @@ from queue import Queue
 from threading import Thread
 # Import classes
 import people_detection as PD
-import App as APP
+import app as APP
 import random as rnd
 PD = PD.PeopleDetection()
 MQTT_ADDRESS = "77.161.23.64"
