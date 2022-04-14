@@ -17,7 +17,7 @@ class Image_editing:
         self.last_frame = None
         self.start_time = 0
         self.start_timers = False
-        self.heated_object_picture = cv.imread('./Heated_objects_test.png')
+        self.heated_object_picture = cv.imread('./Heated_objects_black.png')
         template_folders = ['./Filtering/Templates/Templates_staan/',
                             './Filtering/Templates/Templates_zitten/', './Filtering/Templates/Templates_liggen/']
         self.coords = None
@@ -68,6 +68,8 @@ class Image_editing:
         top, bottom, left, right = [10]*4
         img_with_border = cv.copyMakeBorder(
             image, top, bottom, left, right, cv.BORDER_CONSTANT, value=color)
+        
+        output = img_with_border
         # Convert image to gray and blur it
         src_gray = cv.cvtColor(img_with_border, cv.COLOR_BGR2GRAY)
         src_gray = cv.blur(src_gray, (3, 3))
@@ -110,29 +112,29 @@ class Image_editing:
         _, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
         output = cv.bitwise_and(output, output, mask=mask)
         output = output[10:(34*NUMOFCAM), 10:(42*NUMOFCAM)]
-        self.templateMatching(output)
-        if self.last_frame is not None:
-            frame = cv.cvtColor(self.bitwise_operation(
-                output, self.last_frame),  cv.COLOR_BGR2GRAY)
-            count = 0
-            current_time = time.time()
-            count_threshhold = 100
-            thresh_hold = 100
-            for x in range(frame.shape[0]):
-                for y in range(frame.shape[1]):
-                    if frame[x][y] > 0:
-                        count = count + 1
-            if count - self.prev_count > count_threshhold:
-                self.last_frame = output
-                return
-            if count > thresh_hold:
-                self.start_timers = True
-                self.start_time = time.time()
-            elif self.start_timers is True and count < thresh_hold and current_time - self.start_time > 60:
-                print(str(current_time - self.start_time))
-            self.prev_count = count
-        self.last_frame = output
-        # self.make_templates(output)           # enable this to make templates
+        # self.templateMatching(output)
+        # if self.last_frame is not None:
+        #     frame = cv.cvtColor(self.bitwise_operation(
+        #         output, self.last_frame),  cv.COLOR_BGR2GRAY)
+        #     count = 0
+        #     current_time = time.time()
+        #     count_threshhold = 100
+        #     thresh_hold = 100
+        #     for x in range(frame.shape[0]):
+        #         for y in range(frame.shape[1]):
+        #             if frame[x][y] > 0:
+        #                 count = count + 1
+        #     if count - self.prev_count > count_threshhold:
+        #         self.last_frame = output
+        #         return
+        #     if count > thresh_hold:
+        #         self.start_timers = True
+        #         self.start_time = time.time()
+        #     elif self.start_timers is True and count < thresh_hold and current_time - self.start_time > 60:
+        #         print(str(current_time - self.start_time))
+        #     self.prev_count = count
+        # self.last_frame = output
+        self.make_templates(output)           # enable this to make templates
 
     def make_templates(self, image):
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
@@ -148,7 +150,7 @@ class Image_editing:
         # crop the image at the bounds adding back the two blackened rows at the bottom
         crop = image[ymin:ymax+1, xmin:xmax+1]
         # save resulting masked image
-        cv.imwrite('./Templates/Templates_zitten/' +
+        cv.imwrite('./Filtering/Templates2/Templates_liggen/' +
                    str(self.template_number) + '_template.png ', crop)
         print("template saved " + str(self.template_number))
         self.template_number = self.template_number + 1
@@ -159,7 +161,7 @@ class Image_editing:
         template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
         w, h = template.shape[::-1]
         res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
-        threshold = 0.5
+        threshold = 0.6
         loc = np.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             cv.rectangle(
@@ -178,7 +180,7 @@ class Image_editing:
         templateNumber = 0
         for template in self.template_list[templateID]:
             if(self.template_matching_logic(template, image)):
-                print("Detected: " + str(templateNumber))
+                print("Detected: " + str(templateID))
                 return
             templateNumber += 1
 
