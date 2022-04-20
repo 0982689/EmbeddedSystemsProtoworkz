@@ -1,3 +1,4 @@
+from distutils.archive_util import make_archive
 import cv2 as cv
 import numpy as np
 import os
@@ -11,60 +12,48 @@ numOfCam = 2  # number of cameras
 class People_detection:  # class for people detection
     def __init__(self):  # constructor
         # Set threshold values
-        self.hMin = 0  # min hue
-        self.sMin = 0  # min saturation
-        self.vMin = 0  # min value
-        self.hMax = 103  # max hue
-        self.sMax = 255  # max saturation
-        self.vMax = 255  # max value
         self.x = 0  # template counter
-        self.i = 0  # counter for the number of images
-        self.max_thresh = 255  # max threshold
-        self.thresh = 0  # threshold
-        self.lengthThresh = 4  # length of the threshold
-        self.areaThresh = 10  # area of the threshold
         self.prev_count = 0  # previous count
-        self.kernel = 2  # kernel size
-        self.imgNumber = -1  # image number
+        self.img_number = -1  # image number
         self.last_frame = None  # last frame
         self.start_time = 0  # start time
-        self.start_timers = False  # start timers
+
         self.heated_object_picture = cv.imread(
             './NewProject.jpg')  # heated object picture
 
-        # template folder staan
-        template_folder_staan = './Filtering/Templates2/Templates_staan/'
-        # template folder zitten
-        template_folder_zitten = './Filtering/Templates2/Templates_zitten/'
-        # template folder liggen
-        template_folder_liggen = './Filtering/Templates2/Templates_liggen/'
-        self.coords = None  # coordinates of the template
-        self.templates_staan = []  # list of templates staan
-        # loop through the files in the template folder staan
-        for filename in sorted(os.listdir(template_folder_staan)):
-            self.templates_staan.append(
-                cv.imread(template_folder_staan + filename))  # add the template to the list
-        self.templates_zitten = []  # list of templates zitten
-        # loop through the files in the template folder zitten
-        for filename in sorted(os.listdir(template_folder_zitten)):
-            self.templates_zitten.append(
-                cv.imread(template_folder_zitten + filename))  # add the template to the list
-        self.templates_liggen = []  # list of templates liggen
-        # loop through the files in the template folder liggen
-        for filename in sorted(os.listdir(template_folder_liggen)):
-            self.templates_liggen.append(
-                cv.imread(template_folder_liggen + filename))  # add the template to the list
-        print(len(self.templates_staan))  # print the number of templates staan
-        # print the number of templates zitten
-        print(len(self.templates_zitten))
-        # print the number of templates liggen
-        print(len(self.templates_liggen))
+        self.coords = None  # coordinates of template
 
-    def hsvThresh(self, image):  # thresholding function
+        # template folder standing
+        template_folder_standing = './Filtering/Templates_2/Templates_staan/'
+        # template folder sitting
+        template_folder_sitting = './Filtering/Templates_2/Templates_zitten/'
+        # template folder laying
+        template_folder_laying = './Filtering/Templates_2/Templates_liggen/'
 
+        self.templates_standing = []  # list of templates standing
+        # loop through files in template folder standing
+        for filename in sorted(os.listdir(template_folder_standing)):
+            self.templates_standing.append(
+                cv.imread(template_folder_standing + filename))  # add template to list
+
+        self.templates_sitting = []  # list of templates sitting
+        # loop through files in template folder sitting
+        for filename in sorted(os.listdir(template_folder_sitting)):
+            self.templates_sitting.append(
+                cv.imread(template_folder_sitting + filename))  # add template to list
+        self.templates_laying = []  # list of templates laying
+        # loop through files in template folder laying
+        for filename in sorted(os.listdir(template_folder_laying)):
+            self.templates_laying.append(
+                cv.imread(template_folder_laying + filename))  # add template to list
+
+    def hsv_thresh(self, image):  # thresholding function
+        h_max = 103  # max hue
+        s_max = 255  # max saturation
+        v_max = 255  # max value
         output = image  # output image
         lower = np.array([0, 0, 0])  # lower threshold
-        upper = np.array([self.hMax, self.sMax, self.vMax])  # upper threshold
+        upper = np.array([h_max, s_max, v_max])  # upper threshold
 
         # Create HSV Image and threshold into a range
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)  # convert to HSV
@@ -81,19 +70,24 @@ class People_detection:  # class for people detection
                     output[i, j] = [255, 255, 255]  # set pixel to white
 
         # bitwise and with heated object picture
-        output = self.bitwiseOperation(output, self.heated_object_picture)
+        output = self.bitwise_operation(output, self.heated_object_picture)
         self.thresh_callback(output)  # call threshold callback function
 
-    def bitwiseOperation(self, input, input2):  # bitwise and function
+    def bitwise_operation(self, input, input_2):  # bitwise and function
         # convert to grayscale
-        img2gray = cv.cvtColor(input2, cv.COLOR_BGR2GRAY)
+        img_2_gray = cv.cvtColor(input_2, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(
-            img2gray, 10, 255, cv.THRESH_BINARY)  # threshold
+            img_2_gray, 10, 255, cv.THRESH_BINARY)  # threshold
         mask_inv = cv.bitwise_not(mask)  # invert mask
         output = cv.bitwise_and(input, input, mask=mask_inv)  # bitwise and
         return output
 
     def thresh_callback(self, image):  # threshold callback function
+
+        threshold = 0  # threshold
+        area_thresh = 10  # area threshold
+        length_thresh = 4   # length threshold
+        kernel = 2  # kernel size
 
         # Add black border (needed for accurate contour detection)
         color = [0, 0, 0]  # black
@@ -101,18 +95,12 @@ class People_detection:  # class for people detection
         img_with_border = cv.copyMakeBorder(
             image, top, bottom, left, right, cv.BORDER_CONSTANT, value=color)  # add border
         output = img_with_border  # output image
-        src = img_with_border  # source image
         # Convert image to gray and blur it
-        self.src_gray = cv.cvtColor(
-            src, cv.COLOR_BGR2GRAY)  # convert to grayscale
-        self.src_gray = cv.blur(self.src_gray, (3, 3))  # blur
-        self.source_window = 'Source'  # source window
-        self.threshold = self.thresh  # threshold
-        areaThresh = self.areaThresh  # area threshold
-        lengthThresh = self.lengthThresh  # length threshold
-        kernel = self.kernel  # kernel size
+        src_gray = cv.cvtColor(
+            img_with_border, cv.COLOR_BGR2GRAY)  # convert to grayscale
+        src_gray = cv.blur(src_gray, (3, 3))  # blur
         canny_output = cv.Canny(
-            self.src_gray, self.threshold, self.threshold * 2)  # Canny edge detection
+            src_gray, threshold, threshold * 2)  # Canny edge detection
 
         kernel = cv.getStructuringElement(
             cv.MORPH_ELLIPSE, (kernel, kernel))  # get structuring element
@@ -120,26 +108,26 @@ class People_detection:  # class for people detection
         # _, contours, _ = cv.findContours(canny_output, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         contours, _ = cv.findContours(
             dilated.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)  # find contours
-        contoursfixed = []  # contours fixed
-        # Calculate the area with the moments 00 and compare with the result of the OpenCV function
+        contours_fixed = []  # contours fixed
+        # Calculate area with moments 00 and compare with result of OpenCV function
         areas = []  # areas
         for i in range(len(contours)):  # loop through contours
             area = cv.contourArea(contours[i])  # calculate area
             length = cv.arcLength(contours[i], True)  # calculate length
-            if area >= areaThresh and length >= lengthThresh:  # if area and length are bigger than threshold
+            if area >= area_thresh and length >= length_thresh:  # if area and length are bigger than threshold
                 areas.append(area)  # add area to areas
-                # add contour to contoursfixed
-                contoursfixed.append(contours[i])
-        # Get the moments
-        BiggestContour = []  # biggest contour
+                # add contour to contours_fixed
+                contours_fixed.append(contours[i])
+        # Get moments
+        biggest_contour = []  # biggest contour
         # add biggest contour to biggest contour
-        BiggestContour.append(contoursfixed[areas.index(max(areas))])
+        biggest_contour.append(contours_fixed[areas.index(max(areas))])
 
-        contours = BiggestContour  # contours
+        contours = biggest_contour  # contours
         mu = [None]*len(contours)  # moments
         for i in range(len(contours)):  # loop through contours
             mu[i] = cv.moments(contours[i])  # calculate moments
-        # Get the mass centers
+        # Get mass centers
         mc = [None]*len(contours)  # mass centers
         for i in range(len(contours)):  # loop through contours
             # add 1e-5 to avoid division by zero
@@ -147,29 +135,29 @@ class People_detection:  # class for people detection
                      mu[i]['m01'] / (mu[i]['m00'] + 1e-5))  # calculate mass center
 
         # Draw contours
-        People_mask = np.zeros(
+        people_mask = np.zeros(
             (canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)  # people mask
 
         for i in range(len(contours)):  # loop through contours
             color = (255, 255, 255)  # white
-            cv.drawContours(People_mask, contours, i,
+            cv.drawContours(people_mask, contours, i,
                             color, 1)  # draw contours
-            cv.fillPoly(People_mask, pts=contours, color=(
+            cv.fillPoly(people_mask, pts=contours, color=(
                 255, 255, 255))  # fill polygon
         # Cropping image to get rid of previously added black borders
 
         # convert to grayscale
-        img2gray = cv.cvtColor(People_mask, cv.COLOR_BGR2GRAY)
+        img_2_gray = cv.cvtColor(people_mask, cv.COLOR_BGR2GRAY)
         ret, mask = cv.threshold(
-            img2gray, 10, 255, cv.THRESH_BINARY)  # threshold
+            img_2_gray, 10, 255, cv.THRESH_BINARY)  # threshold
         output = cv.bitwise_and(output, output, mask=mask)  # bitwise and
         output = output[10:(34*numOfCam), 10:(42*numOfCam)]  # crop image
 
         cv.waitKey(1)  # Makes sure window updates
         # Start timer if person remains in same position for long period.
-        self.templateMatching(output)  # template matching
+        self.template_matching(output)  # template matching
         if self.last_frame is not None:  # if last frame is not none
-            frame = cv.cvtColor(self.bitwiseOperation(
+            frame = cv.cvtColor(self.bitwise_operation(
                 output, self.last_frame),  cv.COLOR_BGR2GRAY)  # convert to grayscale
             count = 0  # count
             current_time = time.time()  # current time
@@ -190,8 +178,9 @@ class People_detection:  # class for people detection
                 if current_time - self.start_time > time_not_moving:
                     print("NOTIFICATION NOT MOVING. ALREADY : " +
                           str(current_time - self.start_time))  # print notification not moving
-
         self.last_frame = output  # last frame
+        # uncomment to make templates
+        # self.make_templates(output)  # make templates
 
     def make_templates(self, image):  # make templates
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)  # convert to grayscale
@@ -199,13 +188,13 @@ class People_detection:  # class for people detection
         thresh = cv.threshold(
             gray, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)[1]  # threshold
         hh, ww = thresh.shape  # get shape
-        # make bottom 2 rows black where they are white the full width of the image
+        # make bottom 2 rows black where they are white full width of image
         thresh[hh-3:hh, 0:ww] = 0
         # get bounds of white pixels
         white = np.where(thresh == 255)
         xmin, ymin, xmax, ymax = np.min(white[1]), np.min(
             white[0]), np.max(white[1]), np.max(white[0])
-        # crop the image at the bounds adding back the two blackened rows at the bottom
+        # crop image at bounds adding back two blackened rows at bottom
         crop = image[ymin:ymax+1, xmin:xmax+1]
         # save resulting masked image
         cv.imwrite('./Filtering/Templates2/Templates_liggen/' +
@@ -213,7 +202,7 @@ class People_detection:  # class for people detection
         print("template saved " + str(self.x))  # print template saved
         self.x = self.x + 1  # add to x
 
-    def templateMatchingLogic(self, template, img_rgb):  # template matching logic
+    def template_matching_logic(self, template, img_rgb):  # template matching logic
 
         # convert to grayscale
         img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
@@ -234,27 +223,24 @@ class People_detection:  # class for people detection
                         (pt[0], pt[1]), (pt[0] + w, pt[1] + h)]  # coords
                     return True  # return true
 
-    def templateMatching(self, image):  # template matching
+    def template_matching(self, image):  # template matching
         cv.namedWindow("heatmap", cv.WINDOW_NORMAL)  # create window
         cv.resizeWindow("heatmap", 1280, 480)  # resize window
         cv.imshow("heatmap", image)  # show image
         cv.waitKey(1)  # Makes sure window updates
-        self.imgNumber = self.imgNumber + 1  # add to img number
-        templateNumber = 0
-        for template in self.templates_zitten:  # loop through templates
-            if(self.templateMatchingLogic(template, image)):  # if template matching logic
+        self.img_number = self.img_number + 1  # add to img number
+        for template in self.templates_sitting:  # loop through templates
+            if(self.template_matching_logic(template, image)):  # if template matching logic
                 print("Detected: zitten")  # print detected
                 return
-        for template in self.templates_liggen:  # loop through templates
-            if(self.templateMatchingLogic(template, image)):  # if template matching logic
+        for template in self.templates_laying:  # loop through templates
+            if(self.template_matching_logic(template, image)):  # if template matching logic
                 print("Detected: liggen")  # print detected
                 return
-        for template in self.templates_staan:  # loop through templates
-            if(self.templateMatchingLogic(template, image)):  # if template matching logic
+        for template in self.templates_standing:  # loop through templates
+            if(self.template_matching_logic(template, image)):  # if template matching logic
                 print("Detected: staan")  # print detected
                 return
-            templateNumber += 1  # add to template number
 
     def get_coords(self):  # get coords
-        #print("get coords: " + str(self.coords))
         return self.coords

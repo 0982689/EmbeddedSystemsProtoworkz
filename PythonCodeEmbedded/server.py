@@ -67,14 +67,11 @@ def on_message(client, userdata, msg):
         # horizontal stack of matrixes
         numpy_horizontal = np.hstack((im_color, im_color1))
 
-        PD.hsvThresh(numpy_horizontal)  # call hsvThresh function
-        data = ((rnd.randint(6, 9), 2), (18, 16))  # random data
-        #data = PD.get_coords()
+        PD.hsv_thresh(numpy_horizontal)  # call hsvThresh function
         if PD.get_coords() is not None:  # if there is a person
             QUEUE.put(PD.get_coords())  # put coordinates in queue
         else:  # if there is no person
-            print("none")  # print none
-
+            pass
         # Could be uncommented for debugging
         # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
         # cv.resizeWindow("HeatMap", 1280, 480)
