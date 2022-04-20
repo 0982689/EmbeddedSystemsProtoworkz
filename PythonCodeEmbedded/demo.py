@@ -1,4 +1,4 @@
-# Python program to convert list to image
+# Python program to convert list to image and show output to screen
 
 # import required libraries
 import numpy as np
@@ -19,17 +19,6 @@ tot = []
 pixelsToRemove = []
 
 numOfCams = 2
-
-
-# def takePicture(im_color, pixel_array_reshape):
-#     if not (os.path.exists("../heatMaps")):
-#         os.makedirs("../heatMaps")
-#     num = len(os.listdir("../heatMaps"))
-#     cv.imwrite("../heatMaps/" + "HeatMap_" + str(num / 2) + ".png", im_color)
-#     f = open("../heatMaps/" + "HeatMap_" + str(num / 2) + ".txt", "w")
-#     f.write(str(pixel_array_reshape))
-#     print("Image: " + "../heatMaps/" + "HeatMap_" +
-#           str(num / 2) + ".png " + "saved")
 
 
 def reshapeCam(i):
