@@ -13,9 +13,9 @@ class View:  # the view class
         self.q = q  # queue
         self.root = root  # root
         self.array = []  # array to keep track of the buttons
-        self.initialView()  # initial view
+        self.initial_view()  # initial view
 
-    def initialView(self):  # initial view
+    def initial_view(self):  # initial view
         self.root.attributes("-fullscreen", True)  # fullscreen
 
         canvas = tk.Canvas(self.root, width=1920, height=1080)  # canvas
@@ -44,15 +44,16 @@ class View:  # the view class
         self.var2 = float(self.entry2.get())  # get the width
 
         self.root.destroy()  # destroy the root
-        self.secondScreen = tk.Tk()  # create a new root
+        self.second_screen = tk.Tk()  # create a new root
 
-        self.secondScreen.attributes("-fullscreen", True)  # fullscreen
+        self.second_screen.attributes("-fullscreen", True)  # fullscreen
 
-        canvas = tk.Canvas(self.secondScreen, width=1920,
+        canvas = tk.Canvas(self.second_screen, width=1920,
                            height=1080)  # canvas
         canvas.pack()  # pack
 
-        self.secondScreen.bind("<Key>", partial(self.keypress, canvas))  # bind
+        self.second_screen.bind("<Key>", partial(
+            self.keypress, canvas))  # bind
 
         canvas.create_rectangle(
             400, 50, 400 + self.var1 * 180, 50 + self.var2 * 180, outline='blue')  # rectangle
@@ -60,50 +61,50 @@ class View:  # the view class
             self.var1 * 180/2 + 395, self.var2 * 180/2 + 45, self.var1 * 180/2 + 405, self.var2 * 180/2 + 55, outline='red')  # rectangle
         canvas.pack()  # pack
 
-        bedBtn = tk.Button(canvas, text='Bed',
-                           command=partial(self.bedFunction, canvas))  # button
-        bedBtn.place(x=50, y=50)  # place
+        bed_btn = tk.Button(canvas, text='Bed',
+                            command=partial(self.bed_function, canvas))  # button
+        bed_btn.place(x=50, y=50)  # place
 
-        chairBtn = tk.Button(canvas, text='Chair',
-                             command=partial(self.chairFunction, canvas))  # button
-        chairBtn.place(x=50, y=100)  # place
+        chair_btn = tk.Button(canvas, text='Chair',
+                              command=partial(self.chair_function, canvas))  # button
+        chair_btn.place(x=50, y=100)  # place
 
-        sofaBtn = tk.Button(canvas, text='Sofa',
-                            command=partial(self.sofaFunction, canvas))  # button
-        sofaBtn.place(x=50, y=150)  # place
+        sofa_btn = tk.Button(canvas, text='Sofa',
+                             command=partial(self.sofa_function, canvas))  # button
+        sofa_btn.place(x=50, y=150)  # place
 
         canvas.pack()  # pack
 
-    def bedFunction(self, canvas):  # bed function
+    def bed_function(self, canvas):  # bed function
         bed = canvas.create_rectangle(
             400, 50, 580, 410, fill='red', activefill='cyan')  # rectangle
-        listOfGlobals = globals()  # list of globals
-        listOfGlobals['active'] = bed  # active
+        list_of_globals = globals()  # list of globals
+        list_of_globals['active'] = bed  # active
         self.array.append(bed)  # append
         canvas.tag_bind(bed, '<Double-1>',
-                        partial(self.onClick, canvas))  # bind
+                        partial(self.on_click, canvas))  # bind
 
-    def chairFunction(self, canvas):  # chair function
+    def chair_function(self, canvas):  # chair function
         chair = canvas.create_rectangle(
             400, 50, 490, 140, fill='yellow', activefill='cyan')  # rectangle
-        listOfGlobals = globals()  # list of globals
-        listOfGlobals['active'] = chair  # active
+        list_of_globals = globals()  # list of globals
+        list_of_globals['active'] = chair  # active
         self.array.append(chair)  # append
         canvas.tag_bind(chair, '<Double-1>',
-                        partial(self.onClick, canvas))  # bind
+                        partial(self.on_click, canvas))  # bind
 
-    def sofaFunction(self, canvas):  # sofa function
+    def sofa_function(self, canvas):  # sofa function
         sofa = canvas.create_rectangle(
             400, 50, 580, 320, fill='blue', activefill='cyan')  # rectangle
-        listOfGlobals = globals()  # list of globals
-        listOfGlobals['active'] = sofa  # active
+        list_of_globals = globals()  # list of globals
+        list_of_globals['active'] = sofa  # active
         self.array.append(sofa)  # append
         canvas.tag_bind(sofa, '<Double-1>',
-                        partial(self.onClick, canvas))  # bind
+                        partial(self.on_click, canvas))  # bind
 
-    def onClick(self, canvas, event):  # onClick
-        listOfGlobals = globals()  # list of globals
-        listOfGlobals['active'] = event.widget.find_closest(
+    def on_click(self, canvas, event):  # on_click
+        list_of_globals = globals()  # list of globals
+        list_of_globals['active'] = event.widget.find_closest(
             event.x, event.y)  # active
 
     def keypress(self, canvas, event):  # keypress
@@ -117,17 +118,17 @@ class View:  # the view class
         elif event.char == "s":  # if s
             y = 5
         elif event.char == "c":  # if c
-            self.calculatingCoords(canvas)  # calculate coordinates
+            self.calculating_coords(canvas)  # calculate coordinates
         elif event.char == "f":  # if f
-            self.updateScreen(canvas)  # update screen
+            self.update_screen(canvas)  # update screen
         # this will produce an exception but can be ignored
         canvas.move(active, x, y)  # move
 
-    def calculatingCoords(self, canvas):  # calculating coordinates
+    def calculating_coords(self, canvas):  # calculating coordinates
         sensor = canvas.coords(self.sensor)  # sensor
-        coordSensor = [
+        coord_sensor = [
             sensor[0] + (sensor[2] - sensor[0]), sensor[1] + (sensor[3] - sensor[1])]  # sensor
-        sensorArray = []  # sensor array
+        sensor_array = []  # sensor array
 
         for item in self.array:  # for item in array
             corners = []  # corners
@@ -150,14 +151,14 @@ class View:  # the view class
             corners.append([coords[2], coords[3]])  # corners
             corners.append([coords[0], coords[3]])  # corners
 
-            thisTuple = (tmpVar, corners)  # this tuple
-            sensorArray.append(thisTuple)  # sensor array
+            this_tuple = (tmpVar, corners)  # this tuple
+            sensor_array.append(this_tuple)  # sensor array
 
-        return sensorArray  # return sensor array
+        return sensor_array  # return sensor array
 
-    def updateScreen(self, originalCanvas):  # update screen
-        objects = self.calculatingCoords(originalCanvas)  # objects
-        self.secondScreen.destroy()  # destroy
+    def update_screen(self, original_canvas):  # update screen
+        objects = self.calculating_coords(original_canvas)  # objects
+        self.second_screen.destroy()  # destroy
 
         self.update = tk.Tk()  # create a new root
 
@@ -173,50 +174,50 @@ class View:  # the view class
         self.canvas.pack()  # pack
 
         for object in objects:  # for object in objects
-            tempColor = ''  # temp color
+            temp_color = ''  # temp color
             if object[0] == 'Bed':  # if bed
-                tempColor = 'red'  # temp color
+                temp_color = 'red'  # temp color
             elif object[0] == 'Chair':  # if chair
-                tempColor = 'yellow'  # temp color
+                temp_color = 'yellow'  # temp color
             elif object[0] == 'Sofa':  # if sofa
-                tempColor = 'blue'  # temp color
+                temp_color = 'blue'  # temp color
 
             coordinates = object[1]  # coordinates
             corner0 = coordinates[0]  # corner0
             corner1 = coordinates[2]  # corner1
             self.canvas.create_rectangle(
-                corner0[0], corner0[1], corner1[0], corner1[1], fill=tempColor)  # rectangle
+                corner0[0], corner0[1], corner1[0], corner1[1], fill=temp_color)  # rectangle
 # IndexError: invalid index to scalar variable.
         self.update.after(100, self.process_data)  # after 100
 
     def process_data(self):  # process data
         data = self.q.get()  # data
-        self.personPlacing(data)  # person placing
-        self.createWhiteBoxes()  # create white boxes
+        self.person_placing(data)  # person placing
+        self.create_white_boxes()  # create white boxes
         self.update.after(100, self.process_data)  # after 100
 
-    def personPlacing(self, data):  # person placing
+    def person_placing(self, data):  # person placing
         print("Person Placing")  # print
         self.canvas.delete('line')  # delete
         self.canvas.delete('whiteBox')  # delete
-        coordinateLeftTop = data[0]  # coordinate left top
-        print("left top: " + str(coordinateLeftTop))  # print
-        coordinateRightBottom = data[1]  # coordinate right bottom
+        coordinate_left_top = data[0]  # coordinate left top
+        print("left top: " + str(coordinate_left_top))  # print
+        coordinate_right_top = data[1]  # coordinate right bottom
         # center off mass
-        centerX = (
-            coordinateLeftTop[0] + ((coordinateRightBottom[0] - coordinateLeftTop[0]) / 2))  # center x
-        centerY = (
-            coordinateLeftTop[1] + ((coordinateRightBottom[1] - coordinateLeftTop[1]) / 2))  # center y
+        center_x = (
+            coordinate_left_top[0] + ((coordinate_right_top[0] - coordinate_left_top[0]) / 2))  # center x
+        center_y = (
+            coordinate_left_top[1] + ((coordinate_right_top[1] - coordinate_left_top[1]) / 2))  # center y
 
-        self.degrees(centerX)  # degrees
-        self.degrees(coordinateLeftTop[0])  # degrees
-        self.degrees(coordinateRightBottom[0])  # degrees
+        self.degrees(center_x)  # degrees
+        self.degrees(coordinate_left_top[0])  # degrees
+        self.degrees(coordinate_right_top[0])  # degrees
 
-    def degrees(self, centerX):  # degrees
-        heightToMiddle = 50 + self.var2 * 180 / 2  # height to middle
-        point1 = [400 + self.var1 * 180/2, heightToMiddle]  # point1
+    def degrees(self, center_x):  # degrees
+        height_to_middle = 50 + self.var2 * 180 / 2  # height to middle
+        point1 = [400 + self.var1 * 180/2, height_to_middle]  # point1
 
-        beta = np.radians(centerX * 3.4375)  # beta
+        beta = np.radians(center_x * 3.4375)  # beta
 
         tmp = 0  # tmp
         if(np.degrees(beta) == 90):  # if 90
@@ -258,7 +259,7 @@ class View:  # the view class
         self.canvas.create_line(point1[0], point1[1],
                                 point2[0], point2[1], tag='line')  # line
 
-    def createWhiteBoxes(self):  # create white boxes
+    def create_white_boxes(self):  # create white boxes
         self.canvas.create_rectangle(
             0, 0, 400, 1080, fill='white', outline="", tags="whiteBox")  # rectangle
         self.canvas.create_rectangle(
