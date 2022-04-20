@@ -12,33 +12,33 @@ from threading import Thread
 import people_detection as PD
 import app as APP
 import random as rnd
-PD = PD.PeopleDetection()
+PD = PD.People_detection()
 MQTT_ADDRESS = "global ip address"
 MQTT_USER = "username"
 MQTT_PASSWORD = "password"
 MQTT_TOPIC = "temperature"
 
-tot = []
-q = Queue()
+TOT = []
+QUEUE = Queue()
 
 # number of cameras
-numOfCams = 2
+NUMOFCAMS = 2
 
 # Minimum and maximum temperature used for normalization
-minTemp = 15
-maxTemp = 40
+MINTEMP = 15
+MAXTEMP = 40
 
 
-def sortInputmsg(msg):  # sort input message
+def sort_input_msg(msg):  # sort input message
     msg.payload = msg.payload.decode("utf-8")  # decode message
     msg.payload = msg.payload.split(",")  # split message
     msg.payload.pop()  # remove last element
     msg.payload = list(map(normalize, msg.payload))  # normalize temperature
-    tot.append(msg.payload)  # add to total array
+    TOT.append(msg.payload)  # add to TOTal array
 
 
-def reshapeCam(i):  # rehape input array to a image with heatmap
-    pixel_array_reshape = np.reshape(tot[i], (24, 32))  # reshape array
+def reshape_cam(i):  # rehape input array to a image with heatmap
+    pixel_array_reshape = np.reshape(TOT[i], (24, 32))  # reshape array
     pixel_array_stitch = pixel_array_reshape.astype(
         np.uint8)  # convert to uint8
     im_color = cv.applyColorMap(
@@ -47,7 +47,7 @@ def reshapeCam(i):  # rehape input array to a image with heatmap
 
 
 def normalize(x):  # normalize temperature
-    return ((float(x) - minTemp) / (maxTemp - minTemp)) * 255
+    return ((float(x) - MINTEMP) / (MAXTEMP - MINTEMP)) * 255
 
 
 def on_connect(client, userdata, flags, rc):  # The callback for when the client receives a CONNACK response from the server."""
@@ -59,10 +59,10 @@ def on_connect(client, userdata, flags, rc):  # The callback for when the client
 def on_message(client, userdata, msg):
     t0 = time.time()
     #  The callback for when a PUBLISH message is received from the server."""
-    sortInputmsg(msg)
-    if len(tot) == numOfCams:  # if all cameras have been received
-        im_color = reshapeCam(0)
-        im_color1 = reshapeCam(1)
+    sort_input_msg(msg)
+    if len(TOT) == NUMOFCAMS:  # if all cameras have been received
+        im_color = reshape_cam(0)
+        im_color1 = reshape_cam(1)
 
         # horizontal stack of matrixes
         numpy_horizontal = np.hstack((im_color, im_color1))
@@ -71,7 +71,7 @@ def on_message(client, userdata, msg):
         data = ((rnd.randint(6, 9), 2), (18, 16))  # random data
         #data = PD.get_coords()
         if PD.get_coords() is not None:  # if there is a person
-            q.put(PD.get_coords())  # put coordinates in queue
+            QUEUE.put(PD.get_coords())  # put coordinates in queue
         else:  # if there is no person
             print("none")  # print none
 
@@ -79,20 +79,15 @@ def on_message(client, userdata, msg):
         # cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
         # cv.resizeWindow("HeatMap", 1280, 480)
         # cv.imshow("HeatMap", numpy_horizontal)
-
         # cv.waitKey(1)
 
-        tot.clear()
+        TOT.clear()
 
         if cv.waitKey(33) == ord("q"):  # press q to quit
             cv.destroyAllWindows()  # destroy all windows
             exit()  # exit program
         t1 = time.time()
-
         print("Proces time: " + str(t1 - t0))  # print process time
-
-
-# define the main function
 
 
 def main():  # main function
@@ -103,8 +98,7 @@ def main():  # main function
 
 
 def loop_main():  # main loop
-    pass
-    # APP.start(q)
+    APP.start(QUEUE)
 
 
 def loop_mqtt():  # mqtt loop
