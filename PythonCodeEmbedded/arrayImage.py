@@ -8,41 +8,23 @@ import paho.mqtt.client as mqtt
 
 import time
 
-print("Starting...")
-
 MQTT_ADDRESS = "77.161.23.64"
 MQTT_USER = "proto"
 MQTT_PASSWORD = "workz"
 MQTT_TOPIC = "temperature"
 
 tot = []
-pixelsToRemove = []
-
-numOfCams = 2
 
 
-# def takePicture(im_color, pixel_array_reshape):
-#     if not (os.path.exists("../heatMaps")):
-#         os.makedirs("../heatMaps")
-#     num = len(os.listdir("../heatMaps"))
-#     cv.imwrite("../heatMaps/" + "HeatMap_" + str(num / 2) + ".png", im_color)
-#     f = open("../heatMaps/" + "HeatMap_" + str(num / 2) + ".txt", "w")
-#     f.write(str(pixel_array_reshape))
-#     print("Image: " + "../heatMaps/" + "HeatMap_" +
-#           str(num / 2) + ".png " + "saved")
-
-
-def reshapeCam(i):
-    pixel_array_reshape = np.reshape(tot[i], (24, 32))
-    pixel_array_stitch = pixel_array_reshape.astype(np.uint8)
-    im_color = cv.applyColorMap(
-        pixel_array_stitch, cv.COLORMAP_JET)
-    if pixelsToRemove:
-        for pixel in pixelsToRemove:
-            im_color[pixel[1]][pixel[0]] = (0, 0, 0)
-    else:
-        pass
-    return im_color
+def takePicture(im_color, pixel_array_reshape):
+    if not (os.path.exists("../heatMaps")):
+        os.makedirs("../heatMaps")
+    num = len(os.listdir("../heatMaps"))
+    cv.imwrite("../heatMaps/" + "HeatMap_" + str(num / 2) + ".png", im_color)
+    f = open("../heatMaps/" + "HeatMap_" + str(num / 2) + ".txt", "w")
+    f.write(str(pixel_array_reshape))
+    print("Image: " + "../heatMaps/" + "HeatMap_" +
+          str(num / 2) + ".png " + "saved")
 
 
 def on_connect(client, userdata, flags, rc):
@@ -63,36 +45,30 @@ def on_message(client, userdata, msg):
     msg.payload = msg.payload.split(",")
     msg.payload.pop()
     msg.payload = list(map(normalize, msg.payload))
+    print(msg.payload)
+    # tot.extend(msg.payload)
     tot.append(msg.payload)
     if len(tot) == 2:
-        def click_event(event, x, y, flags, params):
+        pixel_array_reshape = np.reshape(tot[0], (24, 32))
+        pixel_array = pixel_array_reshape.astype(np.uint8)
+        im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
 
-            # checking for left mouse clicks
-            if event == cv.EVENT_LBUTTONDOWN:
-
-                # displaying the coordinates
-                # on the Shell
-                print(x, ' ', y)
-                pixelsToRemove.append((x, y))
-        for i in range(0, numOfCams, 1):
-            if i == 0:
-                im_color = reshapeCam(i)
-            elif i == 1:
-                im_color1 = reshapeCam(i)
+        pixel_array_reshape1 = np.reshape(tot[1], (24, 32))
+        pixel_array1 = pixel_array_reshape1.astype(np.uint8)
+        im_color1 = cv.applyColorMap(pixel_array1, cv.COLORMAP_JET)
 
         numpy_horizontal = np.hstack((im_color, im_color1))
-        print(pixelsToRemove)
+
         cv.namedWindow("HeatMap", cv.WINDOW_NORMAL)
         cv.resizeWindow("HeatMap", 1280, 480)
         cv.imshow("HeatMap", numpy_horizontal)
-        cv.setMouseCallback("HeatMap", click_event)
 
         cv.waitKey(1)
 
         tot.clear()
 
-        # if cv.waitKey(33) == ord("k"):
-        #     takePicture(im_color, pixel_array_reshape)
+        if cv.waitKey(33) == ord("k"):
+            takePicture(im_color, pixel_array_reshape)
 
         if cv.waitKey(33) == ord("q"):
             cv.destroyAllWindows()
