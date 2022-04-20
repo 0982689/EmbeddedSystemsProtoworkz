@@ -59,10 +59,12 @@ class People_detection:  # class for people detection
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)  # convert to HSV
         mask = cv.inRange(hsv, lower, upper)  # threshold into a range
         output = cv.bitwise_and(image, image, mask=mask)  # bitwise and
-        cv.namedWindow("Threshold", cv.WINDOW_NORMAL)  # create window
-        cv.resizeWindow("Threshold", 1280, 480)  # resize window
-        cv.imshow("Threshold", output)  # show image
-        cv.waitKey(1)  # Makes sure window updates
+
+        # uncomment for debugging
+        # cv.namedWindow("Threshold", cv.WINDOW_NORMAL)  # create window
+        # cv.resizeWindow("Threshold", 1280, 480)  # resize window
+        # cv.imshow("Threshold", output)  # show image
+        # cv.waitKey(1)  # Makes sure window updates
         for i in range(len(output)):  # loop through rows
             for j in range(len(output[i])):  # loop through columns
                 # if pixel is not black
@@ -224,10 +226,11 @@ class People_detection:  # class for people detection
                     return True  # return true
 
     def template_matching(self, image):  # template matching
-        cv.namedWindow("heatmap", cv.WINDOW_NORMAL)  # create window
-        cv.resizeWindow("heatmap", 1280, 480)  # resize window
-        cv.imshow("heatmap", image)  # show image
-        cv.waitKey(1)  # Makes sure window updates
+        # uncomment for debugging
+        # cv.namedWindow("heatmap", cv.WINDOW_NORMAL)  # create window
+        # cv.resizeWindow("heatmap", 1280, 480)  # resize window
+        # cv.imshow("heatmap", image)  # show image
+        # cv.waitKey(1)  # Makes sure window updates
         self.img_number = self.img_number + 1  # add to img number
         for template in self.templates_sitting:  # loop through templates
             if(self.template_matching_logic(template, image)):  # if template matching logic

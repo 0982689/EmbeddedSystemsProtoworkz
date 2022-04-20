@@ -115,18 +115,19 @@ class View:
             self.calculatingCoords(canvas)
         elif event.char == "f":
             self.updateScreen(canvas)
-        #canvas.move(active, x, y)
+        # this will produce an exception but can be ignored
+        canvas.move(active, x, y)
 
     def calculatingCoords(self, canvas):
         sensor = canvas.coords(self.sensor)
         coordSensor = [
             sensor[0] + (sensor[2] - sensor[0]), sensor[1] + (sensor[3] - sensor[1])]
         sensorArray = []
-        corners = []
 
         for item in self.array:
+            corners = []
+
             coords = canvas.coords(item)
-            corners.clear()
 
             tmpVar = ""
             x = coords[2] - coords[0]
@@ -144,14 +145,9 @@ class View:
             corners.append([coords[2], coords[3]])
             corners.append([coords[0], coords[3]])
 
-            temp = []
-            temp.clear()
-            for corner in corners:
-                temp.append(np.degrees(
-                    np.arctan((coordSensor[1] - corner[1]) / (coordSensor[0] - corner[0]))))
-
             thisTuple = (tmpVar, corners)
             sensorArray.append(thisTuple)
+
         return sensorArray
 
     def updateScreen(self, originalCanvas):

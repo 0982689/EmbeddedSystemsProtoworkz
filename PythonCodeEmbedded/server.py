@@ -13,9 +13,9 @@ import people_detection as PD
 import app as APP
 import random as rnd
 PD = PD.People_detection()
-MQTT_ADDRESS = "global ip address"
-MQTT_USER = "username"
-MQTT_PASSWORD = "password"
+MQTT_ADDRESS = "77.161.23.64"
+MQTT_USER = "proto"
+MQTT_PASSWORD = "workz"
 MQTT_TOPIC = "temperature"
 
 TOT = []
