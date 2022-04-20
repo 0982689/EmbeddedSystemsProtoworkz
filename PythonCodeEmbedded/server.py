@@ -21,9 +21,31 @@ MQTT_TOPIC = "temperature"
 tot = []
 q = Queue()
 
+# number of cameras
+numOfCams = 2
+
+# Minimum and maximum temperature used for normalization
+minTemp = 15
+maxTemp = 40
+
+
+def sortInputmsg(msg):
+    msg.payload = msg.payload.decode("utf-8")
+    msg.payload = msg.payload.split(",")
+    msg.payload.pop()
+    msg.payload = list(map(normalize, msg.payload))
+    tot.append(msg.payload)
+
+
+def reshapeCam(i):  # rehape input array to a image with heatmap
+    pixel_array_reshape = np.reshape(tot[i], (24, 32))
+    pixel_array_stitch = pixel_array_reshape.astype(np.uint8)
+    im_color = cv.applyColorMap(pixel_array_stitch, cv.COLORMAP_JET)
+    return im_color
+
 
 def normalize(x):
-    return ((float(x) - 15) / (40 - 15)) * 255
+    return ((float(x) - minTemp) / (maxTemp - minTemp)) * 255
 
 
 def on_connect(client, userdata, flags, rc):
@@ -35,22 +57,10 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     t0 = time.time()
     #  The callback for when a PUBLISH message is received from the server."""
-
-    msg.payload = msg.payload.decode("utf-8")
-    msg.payload = msg.payload.split(",")
-    msg.payload.pop()
-    msg.payload = list(map(normalize, msg.payload))
-    # print(msg.payload)
-    # tot.extend(msg.payload)
-    tot.append(msg.payload)
-    if len(tot) == 2:
-        pixel_array_reshape = np.reshape(tot[0], (24, 32))
-        pixel_array = pixel_array_reshape.astype(np.uint8)
-        im_color = cv.applyColorMap(pixel_array, cv.COLORMAP_JET)
-
-        pixel_array_reshape1 = np.reshape(tot[1], (24, 32))
-        pixel_array1 = pixel_array_reshape1.astype(np.uint8)
-        im_color1 = cv.applyColorMap(pixel_array1, cv.COLORMAP_JET)
+    sortInputmsg(msg)
+    if len(tot) == numOfCams:
+        im_color = reshapeCam(0)
+        im_color1 = reshapeCam(1)
 
         numpy_horizontal = np.hstack((im_color, im_color1))
 
@@ -89,7 +99,7 @@ def main():
 
 def loop_main():
     pass
-    #APP.start(q)
+    # APP.start(q)
 
 
 def loop_mqtt():
